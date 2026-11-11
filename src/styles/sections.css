@@ -2499,6 +2499,10 @@ body.is-locked .mobile-bottom-bar {
   gap: 20px;
 }
 
+.minimal-form--with-identity {
+  gap: 16px;
+}
+
 .minimal-field {
   display: flex;
   flex-direction: column;
@@ -2552,10 +2556,53 @@ body.is-locked .mobile-bottom-bar {
   box-shadow: 0 0 0 3px rgba(214, 139, 150, 0.14);
 }
 
+.minimal-select-wrap {
+  position: relative;
+}
+
+.minimal-select {
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 38px;
+  cursor: pointer;
+}
+
+.minimal-select-icon {
+  position: absolute;
+  right: 13px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+}
+
+@keyframes fieldReveal {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.minimal-input--custom-role {
+  margin-top: 2px;
+  border-style: dashed;
+  animation: fieldReveal var(--dur-fast) var(--ease-out);
+}
+
 .minimal-textarea {
   resize: vertical;
   min-height: 176px;
   line-height: 1.6;
+}
+
+.minimal-form--with-identity .minimal-textarea {
+  min-height: 108px;
 }
 
 .minimal-field--grow .minimal-textarea {
@@ -3904,6 +3951,10 @@ body.is-locked .mobile-bottom-bar {
   .minimal-input {
     font-size: 16px;
     padding: 11px 13px;
+  }
+
+  .minimal-input.minimal-select {
+    padding-right: 36px;
   }
 
   .minimal-choices {

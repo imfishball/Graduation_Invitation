@@ -810,12 +810,15 @@ function buildBaseCopy({
     newsletter: {
       subtitle:
         'Hãy viết đôi dòng lên một tờ giấy note và dán lên bảng kỷ niệm — từng lời chúc hay cái hẹn chiều 27/11 đều là mảnh ghép thanh xuân Mai sẽ giữ mãi.',
+      placeholderName: 'Ví dụ: Minh Anh K17',
+      roleLabel: 'Bạn đến với Mai là',
       attendanceLabel: 'Bạn có tham dự buổi lễ không?',
       attendingChoice: 'Rất vui được tham dự',
       remoteChoice: 'Gửi lời chúc từ xa',
       defaultAuthor: 'Khách mời',
       noteTag: '',
       placeholderMessage: 'Viết lời chúc hoặc kỷ niệm lên tờ note tại đây...',
+      errorName: 'Đừng quên ghi tên để Mai biết lời chúc từ bạn nhé!',
       errorMessage: 'Hãy viết đôi dòng lên tờ giấy note gửi đến Mai trước khi dán nha!',
       successMessage: 'Tờ note mới đã được dán lên bảng kỷ niệm! Cảm ơn tình cảm của bạn.',
     },

@@ -45,6 +45,14 @@ export function ChevronRightIcon({ size = 18 }) {
   )
 }
 
+export function ChevronDownIcon({ size = 16 }) {
+  return (
+    <svg {...base} width={size} height={size} strokeWidth={1.8}>
+      <polyline points="6 9 12 15 18 9" />
+    </svg>
+  )
+}
+
 export function EyeIcon({ size = 14 }) {
   return (
     <svg {...base} width={size} height={size}>

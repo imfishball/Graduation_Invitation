@@ -167,6 +167,8 @@ export const NEWSLETTER = {
   script: 'gửi gắm tâm tình',
   title: 'Bảng Lưu Bút & Lời Chúc',
   cta: 'Dán Note Lên Bảng',
+  placeholderName: 'Ví dụ: Minh Anh K17',
+  roles: ['Bạn bè', 'Gia đình & Người thân', 'Khác'],
   noteColors: [
     { id: 'rose', label: 'Hồng Đào', swatch: '#fadcd7' },
     { id: 'butter', label: 'Vàng Kem', swatch: '#faecae' },

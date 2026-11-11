@@ -4,6 +4,7 @@ import { INITIAL_GUESTBOOK, NEWSLETTER } from '../data'
 import { useInvitation } from '../invitationContext'
 import {
   CheckIcon,
+  ChevronDownIcon,
   FeatherPenIcon,
   HeartIcon,
   NoteDoodleIcon,
@@ -21,6 +22,11 @@ const DOODLES = ['star', 'heart', 'flower', 'sparkle']
 
 export default function Newsletter() {
   const { copy } = useInvitation()
+  const showIdentityFields = !copy.isPersonalized
+
+  const [name, setName] = useState('')
+  const [role, setRole] = useState(NEWSLETTER.roles[0])
+  const [customRole, setCustomRole] = useState('')
   const [attendance, setAttendance] = useState('attending') // attending | remote
   const [noteColor, setNoteColor] = useState(NEWSLETTER.noteColors[0].id)
   const [message, setMessage] = useState('')
@@ -53,6 +59,12 @@ export default function Newsletter() {
       setGuestbook(INITIAL_GUESTBOOK)
     }
   }, [])
+
+  // Xóa thông báo lỗi cũ khi chuyển đổi chế độ xem thử thiệp mặc định / cá nhân hóa
+  useEffect(() => {
+    setStatus((prev) => (prev === 'error' ? 'idle' : prev))
+    setErrorMsg('')
+  }, [showIdentityFields])
 
   const saveGuestbook = (list) => {
     setGuestbook(list)
@@ -93,7 +105,16 @@ export default function Newsletter() {
 
   const handleSubmit = (e) => {
     e.preventDefault()
+    const cleanName = name.trim()
     const cleanMsg = message.trim()
+
+    if (showIdentityFields && !cleanName) {
+      setStatus('error')
+      setErrorMsg(
+        copy.newsletter.errorName || 'Đừng quên ghi tên để Mai biết lời chúc từ bạn nhé!'
+      )
+      return
+    }
 
     if (!cleanMsg) {
       setStatus('error')
@@ -106,12 +127,22 @@ export default function Newsletter() {
 
     setTimeout(() => {
       const id = 'msg-' + Date.now()
-      const authorName = copy.rawName ? copy.callName : copy.newsletter.defaultAuthor || 'Khách mời'
-      const displayRole = copy.newsletter.noteTag
-        ? `${copy.newsletter.noteTag} · ${attendance === 'remote' ? 'Gửi từ xa' : 'Tham dự'}`
-        : attendance === 'remote'
-          ? 'Gửi lời chúc từ xa'
-          : 'Tham dự buổi lễ'
+      let authorName
+      let displayRole
+
+      if (showIdentityFields) {
+        authorName = cleanName
+        const resolvedRole = role === 'Khác' ? customRole.trim() || 'Khác' : role
+        displayRole = attendance === 'remote' ? `${resolvedRole} · Gửi từ xa` : resolvedRole
+      } else {
+        authorName = copy.rawName ? copy.callName : copy.newsletter.defaultAuthor || 'Khách mời'
+        displayRole = copy.newsletter.noteTag
+          ? `${copy.newsletter.noteTag} · ${attendance === 'remote' ? 'Gửi từ xa' : 'Tham dự'}`
+          : attendance === 'remote'
+            ? 'Gửi lời chúc từ xa'
+            : 'Tham dự buổi lễ'
+      }
+
       const newEntry = {
         id,
         name: authorName,
@@ -131,6 +162,11 @@ export default function Newsletter() {
       triggerConfetti()
       setStatus('success')
       setMessage('')
+      if (showIdentityFields) {
+        setName('')
+        setRole(NEWSLETTER.roles[0])
+        setCustomRole('')
+      }
     }, 320)
   }
 
@@ -170,7 +206,82 @@ export default function Newsletter() {
           <div className="minimal-journal__grid minimal-journal__grid--notes">
             {/* CỘT TRÁI: Form viết tờ giấy note */}
             <div className="minimal-journal__col minimal-journal__col--form">
-              <form className="minimal-form" onSubmit={handleSubmit} noValidate>
+              <form
+                className={`minimal-form${showIdentityFields ? ' minimal-form--with-identity' : ''}`}
+                onSubmit={handleSubmit}
+                noValidate
+              >
+                {showIdentityFields && (
+                  <>
+                    <div className="minimal-field">
+                      <label className="minimal-label" htmlFor="guest-name">
+                        Họ và tên <span className="req">*</span>
+                      </label>
+                      <input
+                        id="guest-name"
+                        className="minimal-input"
+                        type="text"
+                        maxLength={60}
+                        placeholder={copy.newsletter.placeholderName || NEWSLETTER.placeholderName}
+                        value={name}
+                        onChange={(e) => {
+                          setName(e.target.value)
+                          if (status === 'error') setStatus('idle')
+                        }}
+                        disabled={status === 'submitting'}
+                      />
+                    </div>
+
+                    <div className="minimal-field">
+                      <label className="minimal-label" htmlFor="guest-role">
+                        {copy.newsletter.roleLabel || 'Bạn đến với Mai là'}
+                      </label>
+                      <div className="minimal-select-wrap">
+                        <select
+                          id="guest-role"
+                          className="minimal-input minimal-select"
+                          value={role}
+                          onChange={(e) => {
+                            const nextRole = e.target.value
+                            setRole(nextRole)
+                            if (nextRole !== 'Khác') {
+                              setCustomRole('')
+                            } else {
+                              requestAnimationFrame(() => {
+                                document.getElementById('guest-custom-role')?.focus()
+                              })
+                            }
+                          }}
+                          disabled={status === 'submitting'}
+                        >
+                          {NEWSLETTER.roles.map((r) => (
+                            <option key={r} value={r}>
+                              {r}
+                            </option>
+                          ))}
+                        </select>
+                        <span className="minimal-select-icon">
+                          <ChevronDownIcon size={16} />
+                        </span>
+                      </div>
+
+                      {role === 'Khác' && (
+                        <input
+                          id="guest-custom-role"
+                          className="minimal-input minimal-input--custom-role"
+                          type="text"
+                          maxLength={50}
+                          placeholder="Ví dụ: Đồng nghiệp, Bạn cấp 3..."
+                          aria-label="Nhập mối quan hệ của bạn với Mai"
+                          value={customRole}
+                          onChange={(e) => setCustomRole(e.target.value)}
+                          disabled={status === 'submitting'}
+                        />
+                      )}
+                    </div>
+                  </>
+                )}
+
                 <div className="minimal-field">
                   <span className="minimal-label" id="attendance-label">
                     {copy.newsletter.attendanceLabel}
@@ -241,7 +352,7 @@ export default function Newsletter() {
                   <textarea
                     id="guest-message"
                     className={`minimal-input minimal-textarea note-pad-input note-pad-input--${noteColor}`}
-                    rows={6}
+                    rows={showIdentityFields ? 4 : 6}
                     placeholder={copy.newsletter.placeholderMessage}
                     value={message}
                     onChange={(e) => {
