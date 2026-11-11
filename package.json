@@ -1,0 +1,25 @@
+{
+  "name": "graduation-invitation",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Thiệp mời dự Lễ Tốt Nghiệp trực tuyến — Nguyễn Vũ Xuân Mai | UIT",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "canvas-confetti": "^1.9.4",
+    "lenis": "^1.3.27",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "playwright": "^1.64.1",
+    "playwright-core": "^1.64.1",
+    "pngjs": "^7.0.0",
+    "vite": "^5.4.11"
+  }
+}

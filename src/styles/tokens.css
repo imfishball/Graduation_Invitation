@@ -1,0 +1,108 @@
+/* =========================================================================
+   TOKENS — mọi giá trị lấy từ bản gốc Framer "Advent" (đo bằng getComputedStyle
+   ở 3 khung nhìn: 390 / 912 / 1440). Giá trị đổi theo breakpoint cũng ghi rõ ở đây.
+   ========================================================================= */
+
+:root {
+  /* ---------- Màu ---------- */
+  --cream: #fffaf0; /* nền trang */
+  --sand: #f5ede1; /* nền panel, card bài viết, card video */
+  --ink: #2a2b2f; /* chữ chính */
+  --ink-soft: rgba(42, 43, 47, 0.7); /* chữ phụ */
+  --rose: #c46372; /* accent: pill, nhãn địa điểm, nút play, thương hiệu footer (tương phản cao) */
+  --rose-deep: #b85363; /* nút CTA chính, đạt chuẩn WCAG AA 4.5:1 với chữ trắng */
+  --rose-wash: rgba(214, 139, 150, 0.12); /* nền card newsletter */
+  --rose-blush: rgba(246, 230, 233, 0.3); /* nền section About */
+  --rose-line: rgba(214, 138, 149, 0.32); /* đường kẻ footer */
+  --muted: #544e5b; /* chữ viết tay (Caveat) — tăng tương phản WCAG AA */
+  --link: #897074; /* chữ menu footer */
+  --black: #000; /* tiêu đề section */
+  --hero-desc: #f5ede1; /* mô tả trong hero */
+
+  /* ---------- Typography System (Clean Minimalist Sans — Concept Advent & 100% Tiếng Việt) ---------- */
+  --font-display: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-logo: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-serif: var(--font-display);
+  --font-script: 'Charm', 'Caveat', cursive;
+  --font-hand: 'Charm', 'Caveat', cursive;
+
+  /* ---------- Cỡ chữ ---------- */
+  --fs-h1: 60px; /* 70px ở >=810px, 80px ở >=1440px */
+  --fs-h2: 40px;
+  --lh-h2: 44px;
+  --fs-tagline: 28px;
+  --lh-tagline: 32px;
+  --fs-card-title: 18px;
+  --lh-card-title: 27px;
+  --fs-body: 16px;
+  --lh-body: 24px;
+  --fs-desc: 18px; /* mô tả hero */
+  --lh-desc: 27px;
+  --fs-pill: 15px;
+  --lh-pill: 22.5px;
+  --fs-meta: 14px;
+  --fs-small: 13px;
+  --fs-duration: 12px;
+
+  /* ---------- Bố cục ---------- */
+  --max-w: 1280px; /* container của bản gốc */
+  --gutter: 20px;
+  --section-y: 60px; /* 90px ở >=810px */
+  --grid-gap: 24px;
+
+  /* ---------- Bo góc ---------- */
+  --r-pill: 9999px;
+  --r-card: 16px;
+  --r-panel: 20px;
+
+  /* ---------- Chuyển động ---------- */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  --ease-spring-soft: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-framer: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast: 160ms;
+  --dur-base: 240ms;
+}
+
+@media (max-width: 809.98px) {
+  :root {
+    --fs-h2: clamp(24px, 6.8vw, 32px);
+    --lh-h2: 1.25;
+    --fs-tagline: clamp(22px, 5.5vw, 26px);
+    --lh-tagline: 28px;
+    --gutter: 16px;
+    --section-y: 48px;
+  }
+}
+
+@media (min-width: 810px) {
+  :root {
+    --fs-h1: 70px;
+    --section-y: 90px;
+  }
+}
+
+@media (min-width: 1440px) {
+  :root {
+    --fs-h1: 80px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 0ms;
+    --dur-base: 0ms;
+  }
+}
+
+/*
+  Bản gốc dùng chữ trắng trên nền hồng #D68B96 (2.6:1 — không đạt WCAG AA).
+  Mặc định giữ nguyên màu của bản gốc để giống hệt; người dùng bật
+  "độ tương phản cao" thì tự động dùng hồng đậm hơn (4.8:1 — đạt AA).
+*/
+@media (prefers-contrast: more) {
+  :root {
+    --rose: #b05765;
+  }
+}
