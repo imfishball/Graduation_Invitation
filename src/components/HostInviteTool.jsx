@@ -13,12 +13,15 @@ import {
   CopyIcon,
   EditPenIcon,
   EyeIcon,
+  EyeOffIcon,
   LinkIcon,
+  LockIcon,
   TrashIcon,
   XIcon,
 } from './Icons'
 
 const HOST_HISTORY_KEY = 'wanderblush_host_invite_history_v1'
+const HOST_AUTH_TOKEN_KEY = 'wanderblush_host_auth_token_v1'
 const SELECTABLE_PRESETS = INVITE_PRESETS.filter((p) => p.id !== 'chung')
 
 function AutoTextarea({ value, onChange, ...props }) {
@@ -69,6 +72,237 @@ async function copyToClipboard(text) {
 }
 
 export default function HostInviteTool() {
+  const { isHostMode, hostPanelOpen, startGuestPreview, resetPreview } = useInvitation()
+
+  const [authStatus, setAuthStatus] = useState(() => {
+    if (!isHostMode || typeof window === 'undefined') return 'locked'
+    try {
+      return window.sessionStorage.getItem(HOST_AUTH_TOKEN_KEY) ? 'checking' : 'locked'
+    } catch {
+      return 'locked'
+    }
+  })
+  const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
+  const [authError, setAuthError] = useState('')
+
+  useEffect(() => {
+    if (!isHostMode || authStatus !== 'checking') return undefined
+    let cancelled = false
+
+    const verifySavedSession = async () => {
+      let savedToken = ''
+      try {
+        savedToken = window.sessionStorage.getItem(HOST_AUTH_TOKEN_KEY) || ''
+      } catch {
+        savedToken = ''
+      }
+
+      if (!savedToken) {
+        if (!cancelled) setAuthStatus('locked')
+        return
+      }
+
+      try {
+        const res = await fetch('/api/host-auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'verify', token: savedToken }),
+        })
+        const data = await res.json().catch(() => ({}))
+        if (!cancelled && res.ok && data?.ok) {
+          setAuthStatus('unlocked')
+          return
+        }
+      } catch {
+        // Phiên cũ không hợp lệ hoặc mất kết nối -> yêu cầu nhập lại mật khẩu
+      }
+
+      try {
+        window.sessionStorage.removeItem(HOST_AUTH_TOKEN_KEY)
+      } catch {
+        // ignore
+      }
+      if (!cancelled) setAuthStatus('locked')
+    }
+
+    verifySavedSession()
+    return () => {
+      cancelled = true
+    }
+  }, [isHostMode, authStatus])
+
+  if (!isHostMode) return null
+
+  const handleCloseToDefault = () => {
+    resetPreview()
+    startGuestPreview({ preset: 'chung', name: '', note: '', overrides: {} })
+  }
+
+  const handleLockSession = () => {
+    try {
+      window.sessionStorage.removeItem(HOST_AUTH_TOKEN_KEY)
+    } catch {
+      // ignore
+    }
+    setPassword('')
+    setShowPassword(false)
+    setAuthError('')
+    setAuthStatus('locked')
+  }
+
+  const handleUnlockSubmit = async (e) => {
+    e.preventDefault()
+    if (!password) {
+      setAuthError('Vui lòng nhập mật khẩu để mở trang Host.')
+      return
+    }
+
+    setSubmitting(true)
+    setAuthError('')
+
+    try {
+      const res = await fetch('/api/host-auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password }),
+      })
+      const data = await res.json().catch(() => ({}))
+
+      if (res.ok && data?.ok && data?.token) {
+        try {
+          window.sessionStorage.setItem(HOST_AUTH_TOKEN_KEY, data.token)
+        } catch {
+          // ignore
+        }
+        setPassword('')
+        setShowPassword(false)
+        setAuthError('')
+        setAuthStatus('unlocked')
+      } else {
+        setAuthError(data?.error || 'Mật khẩu chưa chính xác. Vui lòng thử lại.')
+      }
+    } catch {
+      setAuthError('Không thể kết nối máy chủ xác thực. Vui lòng thử lại sau.')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  if (authStatus !== 'unlocked') {
+    if (!hostPanelOpen) return null
+
+    return (
+      <div
+        className="host-studio host-studio--gate"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="host-gate-title"
+        data-lenis-prevent
+      >
+        <div className="host-studio__dialog host-gate__dialog">
+          <div className="host-studio__head">
+            <div>
+              <p className="host-studio__script">công cụ riêng của Xuân Mai</p>
+              <h2 className="host-studio__title" id="host-gate-title">
+                Mở Khóa Trang Quản Trị Thiệp
+              </h2>
+              <p className="host-studio__sub">
+                Vui lòng nhập mật khẩu của chủ thiệp để truy cập trình tạo link cá nhân hóa.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              className="host-studio__close"
+              onClick={handleCloseToDefault}
+              aria-label="Đóng và xem bản thiệp mặc định"
+              title="Xem thiệp mặc định"
+            >
+              <XIcon size={18} />
+            </button>
+          </div>
+
+          {authStatus === 'checking' ? (
+            <p className="host-gate__checking" role="status">
+              Đang kiểm tra phiên đăng nhập...
+            </p>
+          ) : (
+            <form className="host-gate__form" onSubmit={handleUnlockSubmit} noValidate>
+              <div className="host-field">
+                <label className="minimal-label" htmlFor="host-password-input">
+                  Mật khẩu truy cập <span className="req">*</span>
+                </label>
+
+                <div className="host-gate__input-wrap">
+                  <span className="host-gate__lead-icon" aria-hidden="true">
+                    <LockIcon size={16} />
+                  </span>
+                  <input
+                    id="host-password-input"
+                    className="minimal-input host-input host-gate__input"
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete="current-password"
+                    placeholder="Nhập mật khẩu chủ thiệp..."
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value)
+                      if (authError) setAuthError('')
+                    }}
+                    disabled={submitting}
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    className="host-gate__eye"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    aria-label={showPassword ? 'Ẩn mật khẩu' : 'Hiện mật khẩu'}
+                    aria-pressed={showPassword}
+                    disabled={submitting}
+                  >
+                    {showPassword ? <EyeOffIcon size={16} /> : <EyeIcon size={16} />}
+                  </button>
+                </div>
+              </div>
+
+              {authError && (
+                <p className="wishes-feedback wishes-feedback--error" role="status">
+                  {authError}
+                </p>
+              )}
+
+              <div className="host-gate__actions">
+                <button
+                  type="submit"
+                  className="pill pill--rose host-btn host-gate__submit"
+                  disabled={submitting}
+                >
+                  <LockIcon size={15} />
+                  <span>{submitting ? 'Đang kiểm tra...' : 'Mở khóa trang Host'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="host-preview-trigger"
+                  onClick={handleCloseToDefault}
+                  disabled={submitting}
+                >
+                  <EyeIcon size={15} />
+                  <span>Xem thiệp mặc định</span>
+                </button>
+              </div>
+            </form>
+          )}
+        </div>
+      </div>
+    )
+  }
+
+  return <HostStudioWorkspace onLockSession={handleLockSession} />
+}
+
+function HostStudioWorkspace({ onLockSession }) {
   const { isHostMode, hostPanelOpen, copy, startGuestPreview, reopenHostPanel, resetPreview } =
     useInvitation()
 
@@ -125,8 +359,6 @@ export default function HostInviteTool() {
   const shareUrl = `${baseUrl}?i=${token}`
   const activeSms = customSms !== null ? customSms : draftCopy.inviteSms
   const hasAnyOverride = Object.keys(cleanOverrides).length > 0
-
-  if (!isHostMode) return null
 
   const saveHistoryItem = (itemPreset, itemName, itemNote, itemOverrides, itemUrl) => {
     const cleanOv = sanitizeOverrides(itemOverrides)
@@ -318,15 +550,27 @@ export default function HostInviteTool() {
             </p>
           </div>
 
-          <button
-            type="button"
-            className="host-studio__close"
-            onClick={handleViewDefault}
-            aria-label="Đóng công cụ và xem bản thiệp mặc định"
-            title="Xem thiệp mặc định"
-          >
-            <XIcon size={18} />
-          </button>
+          <div className="host-studio__head-actions">
+            <button
+              type="button"
+              className="host-studio__lock"
+              onClick={onLockSession}
+              aria-label="Khóa trang Host"
+              title="Khóa trang Host"
+            >
+              <LockIcon size={16} />
+            </button>
+
+            <button
+              type="button"
+              className="host-studio__close"
+              onClick={handleViewDefault}
+              aria-label="Đóng công cụ và xem bản thiệp mặc định"
+              title="Xem thiệp mặc định"
+            >
+              <XIcon size={18} />
+            </button>
+          </div>
         </div>
 
         <div className="host-studio__grid">

@@ -4539,7 +4539,15 @@ body.is-locked .mobile-bottom-bar {
   font-size: 12.5px;
 }
 
-.host-studio__close {
+.host-studio__head-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.host-studio__close,
+.host-studio__lock {
   flex-shrink: 0;
   width: 38px;
   height: 38px;
@@ -4550,12 +4558,87 @@ body.is-locked .mobile-bottom-bar {
   display: grid;
   place-items: center;
   cursor: pointer;
-  transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
 }
 
-.host-studio__close:hover {
+.host-studio__close:hover,
+.host-studio__lock:hover {
   background: rgba(246, 230, 233, 0.55);
   border-color: var(--rose);
+  color: var(--rose-deep);
+}
+
+.host-gate__dialog {
+  max-width: 480px;
+}
+
+.host-gate__checking {
+  margin: 18px 0 6px;
+  font-size: 14px;
+  color: var(--ink-soft);
+}
+
+.host-gate__form {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.host-gate__input-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.host-gate__lead-icon {
+  position: absolute;
+  left: 14px;
+  color: var(--rose-deep);
+  display: inline-flex;
+  pointer-events: none;
+}
+
+.host-gate__input-wrap .host-gate__input {
+  padding-left: 42px;
+  padding-right: 46px;
+}
+
+.host-gate__eye {
+  position: absolute;
+  right: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--link);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  transition: color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
+}
+
+.host-gate__eye:hover {
+  color: var(--rose-deep);
+  background: rgba(246, 230, 233, 0.5);
+}
+
+.host-gate__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 2px;
+}
+
+.host-gate__submit {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
 }
 
 .host-studio__grid {
@@ -5076,10 +5159,23 @@ body.is-locked .mobile-bottom-bar {
     align-items: flex-start;
   }
 
+  .host-studio--gate {
+    align-items: center;
+  }
+
   .host-studio__dialog {
     max-height: none;
     padding: 20px 16px;
     border-radius: 18px;
+  }
+
+  .host-gate__input {
+    font-size: 16px;
+  }
+
+  .host-gate__actions > button {
+    width: 100%;
+    justify-content: center;
   }
 
   .host-studio__grid {

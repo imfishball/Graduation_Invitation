@@ -1,37 +1,40 @@
-# Thiệp Mời Dự Lễ Tốt Nghiệp — Nguyễn Vũ Xuân Mai | UIT
+# Thiệp Mời Dự Lễ Tốt Nghiệp Trực Tuyến — Nguyễn Vũ Xuân Mai | UIT
 
-Website thiệp mời tốt nghiệp trực tuyến xây dựng bằng **React 18 + Vite**, hỗ trợ cá nhân hóa lời mời theo từng người nhận, trình tạo link cho chủ thiệp (`?host=1`), bảng lưu bút & lời chúc, bản đồ hướng dẫn khuôn viên UIT, đếm ngược thời gian thực và nhạc nền.
+Một website **thiệp mời lễ tốt nghiệp mang phong cách nhật ký thủ công** (*Bullet Journal & Handmade Keepsake*), giúp biến lời mời tốt nghiệp thành một không gian kỷ niệm giàu cảm xúc thay cho một bức ảnh hay dòng tin nhắn thông thường.
 
-## Chạy dự án
+---
+
+## Ý tưởng & Trải nghiệm cốt lõi
+
+Thay vì chỉ thông báo ngày giờ buổi lễ, website được thiết kế như một cuốn nhật ký thu nhỏ lưu giữ cột mốc bốn năm thanh xuân tại Trường Đại học Công nghệ Thông tin (UIT – ĐHQG TP.HCM):
+
+- **Tấm thiệp bìa mở màn (`CoverCard`)**: Người nhận mở link sẽ thấy trang bìa thiệp dọc tối giản, kèm nút mở thiệp tạo cảm giác trân trọng như đang cầm và mở một tấm thiệp giấy thật ngoài đời.
+- **Đếm ngược & Bản đồ hướng dẫn đến UIT**: Tích hợp đồng hồ đếm ngược thời gian thực tới lễ tốt nghiệp (**Thứ Sáu, 27/11/2026 · 15:00 – 17:00**), lịch tháng đánh dấu ngày lễ, bản đồ khuôn viên UIT tương tác (hỗ trợ xem chỉ dẫn theo từng cổng/tuyến xe) cùng nút lưu nhanh vào Google Calendar và Google Maps.
+- **Bảng Lưu Bút & Lời Chúc (Bullet Journal Pinboard)**: Khách mời có thể chọn màu giấy note yêu thích, xác nhận tham dự trực tiếp hoặc gửi lời chúc từ xa rồi "dán" ngay tờ giấy note lên bảng kỷ niệm chung với hiệu ứng thả tim và pháo giấy chúc mừng.
+- **Nhìn lại dấu ấn thanh xuân & Góc kỷ yếu Polaroid**: Kể lại hành trình 4 năm giảng đường qua những góc sân UIT thân quen cùng băng ảnh Polaroid kéo ngang tương tác mượt mà và nhạc nền dịu nhẹ.
+
+---
+
+## Hỗ trợ cá nhân hóa lời mời theo từng người nhận
+
+Một điểm nhấn đặc biệt của website là **khả năng cá nhân hóa xưng hô và lời nhắn theo từng đối tượng khách mời**:
+
+- Khi gửi thiệp cho **Thầy/Cô**, **Bố Mẹ & Gia đình**, **Cô Chú / Ông Bà**, **Anh/Chị/Em khóa dưới**, **Bạn bè** hay **Bạn thân**, mỗi mối quan hệ lại cần một cách xưng hô và sắc thái cảm xúc riêng (*em – Thầy/Cô*, *con – Bố Mẹ*, *mình – bạn*...).
+- Hệ thống hỗ trợ tạo các **đường dẫn mời riêng** được mã hóa gọn qua tham số liên kết (`?i=...`), tự động đồng bộ toàn bộ câu chữ trên bìa thiệp, màn hình chào đầu trang, đôi dòng tâm sự, câu hỏi xác nhận tham dự và lời cảm ơn cuối trang theo đúng vai vế người nhận — đồng thời vẫn giữ nguyên **bản thiệp mẫu mặc định** khi chia sẻ link gốc chung cho mọi người.
+
+---
+
+## Chạy dự án trên máy
 
 ```bash
 npm install
-npm run dev        # http://localhost:5173
-npm run build      # Build production vào dist/
-npm run preview    # Xem trước bản build tại http://localhost:4173
+npm run dev        # Khởi chạy môi trường phát triển (http://localhost:5173)
+npm run build      # Đóng gói bản production vào thư mục dist/
+npm run preview    # Xem trước bản build production (http://localhost:4173)
 ```
 
-## Tính năng chính
+## Công nghệ sử dụng
 
-- **Trang bìa thiệp mời (`CoverCard`)**: Mở màn dạng thiệp dọc kèm hiệu ứng mở thiệp mượt mà.
-- **Cá nhân hóa link (`?i=...`) & Host Studio (`?host=1`)**: Tạo link mời riêng cho từng đối tượng (Bạn bè, Bạn thân, Anh/Chị/Em, Thầy/Cô, Bố Mẹ, Cô Chú) với hai mức độ thân thiết (Xã giao / Thân thiết) và chỉnh sửa câu chữ trực tiếp trước khi sao chép link.
-- **Thời gian & Địa điểm**: Đồng hồ đếm ngược, lịch tháng 11/2026 đánh dấu ngày lễ, bản đồ khuôn viên UIT tương tác và nút mở Google Maps / Google Calendar.
-- **Bảng lưu bút & lời chúc**: Xác nhận tham dự / gửi lời chúc từ xa theo xưng hô được cá nhân hóa và dán giấy note lên bảng kỷ niệm.
-- **Hành trình & Kỷ yếu**: Trình bày câu chuyện thanh xuân và băng ảnh Polaroid tương tác.
-- **Bảo vệ nội dung hiển thị**: Chặn chuột phải, chặn bôi đen/sao chép trang (trừ ô nhập liệu), chặn kéo ảnh và các phím tắt xem nguồn / mở DevTools.
-
-## Cấu trúc mã nguồn
-
-```text
-src/
-  App.jsx                 Bố cục trang chính và khóa/mở thiệp
-  data.js                 Thông tin buổi lễ, nội dung section và album ảnh
-  personalization.js      Xưng hô, mẫu lời mời theo nhóm người nhận & mã hóa link
-  invitationContext.jsx   State dùng chung cho chế độ khách / chủ thiệp
-  hooks.js                Scroll mượt, reveal, scroll spy và bảo vệ nội dung
-  components/             Header, CoverCard, Hero, CountdownTimer, About, Newsletter,
-                          Adventures, Instagram, Footer, HostInviteTool, WaterRipple...
-  styles/                 Design tokens, base CSS, components và responsive sections
-public/
-  assets/                 Ảnh khuôn viên UIT, kỷ yếu, bản đồ, nhạc nền và SVG trang trí
-```
+- **React 18** + **Vite 5**
+- **Lenis** (cuộn mượt) & **canvas-confetti** (hiệu ứng chúc mừng khi gửi lưu bút)
+- **CSS thuần theo Design Tokens** tối ưu hiển thị đa thiết bị (Desktop, Tablet và Mobile)
