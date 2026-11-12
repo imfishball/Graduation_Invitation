@@ -67,12 +67,12 @@
 
 @media (max-width: 809.98px) {
   :root {
-    --fs-h2: clamp(24px, 6.8vw, 32px);
+    --fs-h2: clamp(21px, 5.4vw, 25px);
     --lh-h2: 1.25;
-    --fs-tagline: clamp(22px, 5.5vw, 26px);
-    --lh-tagline: 28px;
-    --gutter: 16px;
-    --section-y: 48px;
+    --fs-tagline: clamp(18.5px, 4.6vw, 22px);
+    --lh-tagline: 24px;
+    --gutter: 20px;
+    --section-y: 52px;
   }
 }
 

@@ -11,10 +11,11 @@ import {
   OutlineStarIcon,
   PaperclipIcon,
   WavyLineSvg,
+  XIcon,
 } from './Icons'
 import SectionHead from './SectionHead'
 
-const STORAGE_KEY = 'graduation_guestbook_messages_v5'
+const STORAGE_KEY = 'graduation_guestbook_messages_v6'
 const LIKES_STORAGE_KEY = 'graduation_guestbook_likes_v1'
 const NOTE_TILTS = ['-1.1deg', '0.9deg', '-0.7deg', '1deg']
 const FASTENERS = ['tape-stripe', 'tape-dots', 'pushpin', 'tape-grid']
@@ -34,6 +35,7 @@ export default function Newsletter() {
   const [errorMsg, setErrorMsg] = useState('')
   const [guestbook, setGuestbook] = useState(INITIAL_GUESTBOOK)
   const [newestId, setNewestId] = useState(null)
+  const [selectedNote, setSelectedNote] = useState(null)
   const [likedIds, setLikedIds] = useState(() => {
     try {
       const savedLikes = localStorage.getItem(LIKES_STORAGE_KEY)
@@ -65,6 +67,22 @@ export default function Newsletter() {
     setStatus((prev) => (prev === 'error' ? 'idle' : prev))
     setErrorMsg('')
   }, [showIdentityFields])
+
+  // Khóa cuộn trang & hỗ trợ phím Escape khi mở xem chi tiết tờ note
+  useEffect(() => {
+    if (!selectedNote) return
+    document.body.classList.add('is-locked')
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setSelectedNote(null)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.body.classList.remove('is-locked')
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [selectedNote])
 
   const saveGuestbook = (list) => {
     setGuestbook(list)
@@ -191,7 +209,18 @@ export default function Newsletter() {
             title={NEWSLETTER.title}
             id="wishes-title"
           />
-          <p className="wishes__subtitle">{copy.newsletter.subtitle}</p>
+          <p className="wishes__subtitle">
+            {copy.isPersonalized ? (
+              copy.newsletter.subtitle
+            ) : (
+              <>
+                <span className="text-desktop">{copy.newsletter.subtitle}</span>
+                <span className="text-mobile">
+                  Viết đôi dòng gửi Mai và dán note lên bảng kỷ niệm 27/11 nhé.
+                </span>
+              </>
+            )}
+          </p>
         </div>
 
         {/* Bảng lưu bút Bullet Journal tối giản */}
@@ -404,13 +433,6 @@ export default function Newsletter() {
                     </span>
                   </div>
                 </div>
-
-                <span
-                  className="minimal-wall__count bujo-count-tag"
-                  aria-label={`${guestbook.length} tờ note`}
-                >
-                  {guestbook.length} tờ note
-                </span>
               </div>
 
               <div className="notes-board__frame">
@@ -432,6 +454,16 @@ export default function Newsletter() {
                           className={`sticky-note sticky-note--${colorId} ${isFresh ? 'is-fresh' : ''}`}
                           key={entry.id}
                           style={{ '--note-tilt': tilt }}
+                          role="button"
+                          tabIndex={0}
+                          aria-label={`Xem trọn vẹn lời chúc của ${entry.name}`}
+                          onClick={() => setSelectedNote({ ...entry, colorId, fastener, doodle, idx })}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault()
+                              setSelectedNote({ ...entry, colorId, fastener, doodle, idx })
+                            }
+                          }}
                         >
                           {fastener === 'pushpin' ? (
                             <span className="sticky-note__pin" aria-hidden="true" />
@@ -466,12 +498,19 @@ export default function Newsletter() {
                             <button
                               type="button"
                               className={`minimal-wish__like ${isLiked ? 'is-liked' : ''}`}
-                              onClick={() => toggleLike(entry.id)}
-                              aria-label={`Thả tim tờ note của ${entry.name}`}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                toggleLike(entry.id)
+                              }}
+                              aria-label={
+                                isLiked
+                                  ? `Bỏ thả tim tờ note của ${entry.name}`
+                                  : `Thả tim tờ note của ${entry.name}`
+                              }
                               aria-pressed={isLiked}
                             >
                               <HeartIcon size={13} />
-                              <span>{isLiked ? 'Đã trân quý' : 'Thả tim'}</span>
+                              {!isLiked && <span>Thả tim</span>}
                             </button>
                           </footer>
                         </article>
@@ -484,6 +523,83 @@ export default function Newsletter() {
           </div>
         </div>
       </div>
+
+      {/* Modal phóng to xem trọn vẹn nội dung tờ note */}
+      {selectedNote && (
+        <div
+          className="note-modal"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="note-modal-author"
+          onClick={() => setSelectedNote(null)}
+        >
+          <div className="note-modal__backdrop" />
+          <div
+            className={`note-modal__card sticky-note--${selectedNote.colorId}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {selectedNote.fastener === 'pushpin' ? (
+              <span className="sticky-note__pin" aria-hidden="true" />
+            ) : (
+              <span
+                className={`sticky-note__tape sticky-note__tape--${selectedNote.fastener}`}
+                aria-hidden="true"
+              />
+            )}
+
+            {selectedNote.fastener === 'tape-grid' && (
+              <span className="sticky-note__clip" aria-hidden="true">
+                <PaperclipIcon size={24} />
+              </span>
+            )}
+
+            <button
+              type="button"
+              className="note-modal__close"
+              onClick={() => setSelectedNote(null)}
+              aria-label="Đóng tờ note"
+            >
+              <XIcon size={18} />
+            </button>
+
+            <div className="note-modal__body" data-lenis-prevent>
+              <p className="note-modal__msg">{selectedNote.message}</p>
+            </div>
+
+            <footer className="note-modal__foot">
+              <div className="minimal-wish__author">
+                <div className="sticky-note__name-row">
+                  <strong className="note-modal__name" id="note-modal-author">
+                    {selectedNote.name}
+                  </strong>
+                  {selectedNote.id === newestId && (
+                    <span className="minimal-wish__new">Mới dán</span>
+                  )}
+                </div>
+                <span className="note-modal__meta">
+                  {selectedNote.role}
+                  {selectedNote.time ? ` · ${selectedNote.time}` : ''}
+                </span>
+              </div>
+
+              <button
+                type="button"
+                className={`minimal-wish__like ${likedIds[selectedNote.id] ? 'is-liked' : ''}`}
+                onClick={() => toggleLike(selectedNote.id)}
+                aria-label={
+                  likedIds[selectedNote.id]
+                    ? `Bỏ thả tim tờ note của ${selectedNote.name}`
+                    : `Thả tim tờ note của ${selectedNote.name}`
+                }
+                aria-pressed={!!likedIds[selectedNote.id]}
+              >
+                <HeartIcon size={15} />
+                {!likedIds[selectedNote.id] && <span>Thả tim</span>}
+              </button>
+            </footer>
+          </div>
+        </div>
+      )}
     </section>
   )
 }

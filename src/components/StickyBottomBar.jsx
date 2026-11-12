@@ -31,9 +31,8 @@ export default function StickyBottomBar() {
           className="mobile-bottom-btn mobile-bottom-btn--maps"
           aria-label="Chỉ đường Google Maps đến UIT"
         >
-          <DirectionsIcon size={15} />
-          <span className="btn-label-full">Chỉ đường đến UIT</span>
-          <span className="btn-label-short">Chỉ đường</span>
+          <DirectionsIcon size={14} />
+          <span>Chỉ đường</span>
         </a>
 
         <a
@@ -41,9 +40,8 @@ export default function StickyBottomBar() {
           className="mobile-bottom-btn mobile-bottom-btn--rsvp"
           aria-label="Gửi lời chúc mừng đến Xuân Mai"
         >
-          <HeartIcon size={15} />
-          <span className="btn-label-full">Nhắn gửi lời chúc</span>
-          <span className="btn-label-short">Gửi lời chúc</span>
+          <HeartIcon size={14} />
+          <span>Gửi lời chúc</span>
         </a>
       </div>
     </aside>

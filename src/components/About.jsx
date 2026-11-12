@@ -51,7 +51,7 @@ export default function About() {
               loading="lazy"
               decoding="async"
             />
-            <figcaption className="about__caption">Xuân Mai</figcaption>
+            <figcaption className="about__caption">It's me</figcaption>
           </figure>
 
           <div className="about__pet">
@@ -63,7 +63,7 @@ export default function About() {
               loading="lazy"
               decoding="async"
             />
-            <span>Kỷ niệm</span>
+            <span>UIT :3</span>
           </div>
 
           <div className="ornament about__paw" aria-hidden="true" />
@@ -112,14 +112,20 @@ export default function About() {
                   <span className="venue-guide__dot" />
                   <div className="venue-guide__content">
                     <strong>Lối vào chính</strong>
-                    <span>Cổng 1 (đường Hàn Thuyên) mở cho mọi phương tiện</span>
+                    <span>
+                      <span className="text-desktop">Cổng 1 (đường Hàn Thuyên) mở cho mọi phương tiện</span>
+                      <span className="text-mobile">Cổng 1 (Hàn Thuyên) — mọi phương tiện</span>
+                    </span>
                   </div>
                 </div>
                 <div className="venue-guide__item">
                   <span className="venue-guide__dot" />
                   <div className="venue-guide__content">
                     <strong>Bãi giữ xe</strong>
-                    <span>Khu vực giữ xe cạnh Tòa A</span>
+                    <span>
+                      <span className="text-desktop">Khu vực giữ xe cạnh Tòa A</span>
+                      <span className="text-mobile">Khu vực cạnh Tòa A</span>
+                    </span>
                   </div>
                 </div>
               </div>
@@ -127,12 +133,12 @@ export default function About() {
               {/* Gợi ý phương tiện tinh gọn */}
               <div className="venue-transit">
                 <div className="venue-transit__item">
-                  <CarIcon size={16} />
+                  <CarIcon size={15} />
                   <span><strong>Grab / Taxi:</strong> Ghim Cổng chính UIT</span>
                 </div>
                 <div className="venue-transit__item">
-                  <BusIcon size={16} />
-                  <span><strong>Xe buýt:</strong> Tuyến số 08, 10, 19, 52</span>
+                  <BusIcon size={15} />
+                  <span><strong>Xe buýt:</strong> Tuyến 08, 10, 19, 52</span>
                 </div>
               </div>
 
@@ -145,8 +151,9 @@ export default function About() {
                   rel="noreferrer noopener"
                   aria-label="Mở Google Maps chỉ đường đến Trường Đại học Công nghệ Thông tin (UIT)"
                 >
-                  <DirectionsIcon size={16} />
-                  <span>Chỉ đường Google Maps</span>
+                  <DirectionsIcon size={15} />
+                  <span className="text-desktop">Chỉ đường Google Maps</span>
+                  <span className="text-mobile">Chỉ đường</span>
                 </a>
                 <a
                   className="pill pill--light"
@@ -155,8 +162,9 @@ export default function About() {
                   rel="noreferrer noopener"
                   aria-label="Thêm sự kiện Lễ Tốt Nghiệp vào Google Calendar"
                 >
-                  <CalendarIcon size={16} />
-                  <span>Lưu vào Lịch</span>
+                  <CalendarIcon size={15} />
+                  <span className="text-desktop">Lưu vào Lịch</span>
+                  <span className="text-mobile">Lưu lịch</span>
                 </a>
               </div>
             </div>

@@ -188,7 +188,7 @@ export const INITIAL_GUESTBOOK = [
     fastener: 'tape-stripe',
     doodle: 'star',
     message:
-      'Bố Mẹ rất tự hào về con gái nhỏ đã hoàn thành xuất sắc chặng đường đại học. Chặng đường phía trước cứ mạnh dạn bước đi, cả nhà luôn ở phía sau ủng hộ con!',
+      'Bố Mẹ rất tự hào về con gái! Chúc con vững bước chặng đường mới, cả nhà luôn bên con.',
     time: 'Hôm qua lúc 18:30',
   },
   {
@@ -200,7 +200,7 @@ export const INITIAL_GUESTBOOK = [
     fastener: 'tape-dots',
     doodle: 'heart',
     message:
-      'Bốn năm cùng lớp, cùng chạy deadline, cuối cùng cũng đến ngày này. Thứ Sáu 27/11 tụi tao có mặt đúng 15h00 ôm hoa tới UIT chụp ảnh nha!',
+      'Chúc mừng tốt nghiệp nha Mai! Thứ Sáu 27/11 đúng 15h00 tụi tao ôm hoa tới UIT chụp ảnh nha!',
     time: 'Hôm qua lúc 20:15',
   },
   {
@@ -212,7 +212,7 @@ export const INITIAL_GUESTBOOK = [
     fastener: 'pushpin',
     doodle: 'flower',
     message:
-      'Chúc mừng tân cử nhân Xuân Mai! Thầy mong em luôn giữ tinh thần ham học hỏi, sự tự tin và vươn thật xa trên hành trình công nghệ phía trước.',
+      'Chúc mừng tân cử nhân Xuân Mai! Chúc em luôn giữ tinh thần ham học hỏi và vươn xa hơn nữa.',
     time: 'Hôm nay lúc 08:45',
   },
   {
@@ -224,7 +224,7 @@ export const INITIAL_GUESTBOOK = [
     fastener: 'tape-grid',
     doodle: 'sparkle',
     message:
-      'Nhớ mãi những ngày đầu còn bỡ ngỡ nhập học, chạy đồ án ở thư viện mà nay đã tốt nghiệp rồi. Chúc Mai luôn rạng rỡ và thật nhiều niềm vui!',
+      'Chúc Mai tốt nghiệp thật rực rỡ và nhiều niềm vui! Hẹn gặp bạn chiều 27/11 ở sân trường UIT nhé.',
     time: 'Hôm nay lúc 10:15',
   },
 ]

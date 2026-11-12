@@ -106,10 +106,20 @@ export default function CountdownTimer() {
             </div>
 
             <p className="countdown-open__venue">
-              Địa điểm: <strong>{GRADUATION_INFO.venue}</strong>
+              <span className="text-desktop">
+                Địa điểm: <strong>{GRADUATION_INFO.venue}</strong>
+              </span>
+              <span className="text-mobile">
+                <strong>UIT • ĐHQG-HCM</strong>, Thủ Đức
+              </span>
             </p>
             <p className="countdown-open__note">
-              Đón khách &amp; chụp ảnh kỷ niệm: <strong>15:00 – 17:00</strong>
+              <span className="text-desktop">
+                Đón khách &amp; chụp ảnh kỷ niệm: <strong>15:00 – 17:00</strong>
+              </span>
+              <span className="text-mobile">
+                Đón khách &amp; chụp ảnh: <strong>15:00 – 17:00</strong>
+              </span>
             </p>
           </div>
         </div>

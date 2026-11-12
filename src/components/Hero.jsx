@@ -40,11 +40,23 @@ export default function Hero() {
             <span className="hero__title-rest">{copy.hero.rest || 'tốt nghiệp rồi!'}</span>
           </h1>
 
-          <p className="hero__desc">{copy.hero.description}</p>
+          <p className="hero__desc">
+            {copy.isPersonalized ? (
+              copy.hero.description
+            ) : (
+              <>
+                <span className="text-desktop">{copy.hero.description}</span>
+                <span className="text-mobile">
+                  Thanh xuân UIT sắp khép lại. Mong được cùng mọi người lưu giữ khoảnh khắc này.
+                </span>
+              </>
+            )}
+          </p>
 
           <div className="hero__actions">
             <a className="pill pill--rose hero__action-btn hero__action-btn--primary" href="#contact">
-              {HERO.cta.primary}
+              <span className="hero-cta-full">{HERO.cta.primary}</span>
+              <span className="hero-cta-short">Gửi lời chúc</span>
             </a>
             <a className="pill pill--light hero__action-btn hero__action-btn--secondary" href="#countdown">
               <span className="hero-cta-full">{HERO.cta.secondary}</span>
@@ -64,7 +76,12 @@ export default function Hero() {
                 )}
                 <li>
                   <p className="stat__value">{stat.value}</p>
-                  <p className="stat__label">{stat.label}</p>
+                  <p className="stat__label">
+                    <span className="text-desktop">{stat.label}</span>
+                    <span className="text-mobile">
+                      {index === 0 ? 'Thanh xuân' : index === 1 ? 'Trưởng thành' : 'Biết ơn'}
+                    </span>
+                  </p>
                 </li>
               </Fragment>
             ))}
