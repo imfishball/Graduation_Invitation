@@ -2,6 +2,7 @@ import crypto from 'node:crypto'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { verifyHostToken } from './host-auth.js'
 
 const NOTES_FILE_PATH = fileURLToPath(new URL('../data/notes.json', import.meta.url))
 const CWD_NOTES_FILE_PATH = path.resolve(process.cwd(), 'data', 'notes.json')
@@ -152,8 +153,7 @@ async function kvReadNotes(kv) {
   const data = await res.json()
   if (typeof data?.result === 'string' && data.result.trim()) {
     const parsed = JSON.parse(data.result)
-    const sanitized = sanitizeStoredNotes(parsed)
-    if (sanitized.length > 0) return sanitized
+    if (Array.isArray(parsed)) return sanitizeStoredNotes(parsed)
   }
 
   const seed = await readLocalNotesFile()
@@ -199,10 +199,9 @@ async function gistReadNotes(gist) {
 
   const data = await res.json()
   const file = data?.files?.[GIST_FILENAME]
-  if (file?.content) {
+  if (file && typeof file.content === 'string') {
     const parsed = JSON.parse(file.content)
-    const sanitized = sanitizeStoredNotes(parsed)
-    if (sanitized.length > 0) return sanitized
+    if (Array.isArray(parsed)) return sanitizeStoredNotes(parsed)
   }
 
   const seed = await readLocalNotesFile()
@@ -335,6 +334,71 @@ async function appendNoteWithMeta(body) {
   return outcome
 }
 
+async function deleteNoteWithMeta(noteId) {
+  const cleanId = typeof noteId === 'string' ? noteId.trim().slice(0, 120) : ''
+  if (!cleanId) {
+    return { validationError: 'Thiếu mã tờ note cần xóa.' }
+  }
+
+  const removeFromList = (list) => {
+    const exists = list.some((item) => String(item?.id || '') === cleanId)
+    if (!exists) return null
+    return list.filter((item) => String(item?.id || '') !== cleanId)
+  }
+
+  const kv = getKvConfig()
+  if (kv) {
+    const current = await kvReadNotes(kv)
+    const updated = removeFromList(current)
+    if (!updated) return { deletedId: cleanId, notes: current, backend: 'kv', shared: true, notFound: true }
+    await kvWriteNotes(kv, updated)
+    return { deletedId: cleanId, notes: updated, backend: 'kv', shared: true }
+  }
+
+  const gist = getGistConfig()
+  if (gist) {
+    const current = await gistReadNotes(gist)
+    const updated = removeFromList(current)
+    if (!updated) return { deletedId: cleanId, notes: current, backend: 'gist', shared: true, notFound: true }
+    await gistWriteNotes(gist, updated)
+    return { deletedId: cleanId, notes: updated, backend: 'gist', shared: true }
+  }
+
+  if (process.env.VERCEL) {
+    const current = await readLocalNotesFile()
+    const updated = removeFromList(current) || current
+    return { deletedId: cleanId, notes: updated, backend: 'readonly', shared: false }
+  }
+
+  let outcome
+  const task = fileWriteQueue.then(async () => {
+    const current = await readLocalNotesFile()
+    const updated = removeFromList(current)
+    if (!updated) {
+      outcome = { deletedId: cleanId, notes: current, backend: 'file', shared: true, notFound: true }
+      return
+    }
+    await writeLocalNotesFile(updated)
+    outcome = { deletedId: cleanId, notes: updated, backend: 'file', shared: true }
+  })
+
+  fileWriteQueue = task.catch(() => {})
+  await task
+  return outcome
+}
+
+function getRequestBearerToken(req, body) {
+  const authHeader = req.headers?.authorization || req.headers?.Authorization || ''
+  if (typeof authHeader === 'string' && /^Bearer\s+/i.test(authHeader)) {
+    return authHeader.replace(/^Bearer\s+/i, '').trim()
+  }
+  const headerToken = req.headers?.['x-host-token']
+  if (typeof headerToken === 'string' && headerToken.trim()) {
+    return headerToken.trim()
+  }
+  return typeof body?.token === 'string' ? body.token.trim() : ''
+}
+
 export default async function handler(req, res) {
   if (req.method === 'GET') {
     try {
@@ -371,6 +435,57 @@ export default async function handler(req, res) {
     }
   }
 
-  res.setHeader('Allow', 'GET, POST')
+  if (req.method === 'DELETE') {
+    let body = {}
+    try {
+      body = await readJsonBody(req)
+    } catch (err) {
+      const status = err?.code === 'PAYLOAD_TOO_LARGE' ? 413 : 400
+      return sendJson(res, status, { ok: false, error: 'Dữ liệu yêu cầu xóa không hợp lệ.' })
+    }
+
+    const token = getRequestBearerToken(req, body)
+    const auth = verifyHostToken(token)
+    if (!auth.ok) {
+      return sendJson(res, auth.status || 401, {
+        ok: false,
+        code: auth.code,
+        error: auth.error,
+      })
+    }
+
+    let queryId = ''
+    try {
+      const parsedUrl = new URL(req.url || '/', 'http://localhost')
+      queryId = parsedUrl.searchParams.get('id') || ''
+    } catch {
+      queryId = ''
+    }
+
+    const targetId = typeof body?.id === 'string' && body.id.trim() ? body.id.trim() : queryId
+
+    try {
+      const result = await deleteNoteWithMeta(targetId)
+      if (result.validationError) {
+        return sendJson(res, 400, { ok: false, error: result.validationError })
+      }
+      if (result.notFound) {
+        return sendJson(res, 404, {
+          ok: false,
+          code: 'NOT_FOUND',
+          error: 'Tờ note này đã được xóa trước đó hoặc không còn trên bảng.',
+          notes: result.notes,
+        })
+      }
+      return sendJson(res, 200, { ok: true, ...result })
+    } catch (err) {
+      return sendJson(res, 500, {
+        ok: false,
+        error: 'Không thể xóa tờ note lúc này. Vui lòng thử lại.',
+      })
+    }
+  }
+
+  res.setHeader('Allow', 'GET, POST, DELETE')
   return sendJson(res, 405, { ok: false, error: 'Phương thức không hợp lệ.' })
 }

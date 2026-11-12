@@ -91,8 +91,8 @@ export const POSTS = [
     location: 'Tòa Nhà Chính • UIT',
     title: 'Ngước Nhìn Mái Trường UIT',
     excerpt: 'Tòa nhà kính và hàng cờ bay trong nắng nhẹ, gói trọn bốn năm thanh xuân rực rỡ.',
-    image: '/assets/post-uit-flags.jpg',
-    alt: 'Tòa nhà kính Trường Đại học Công nghệ Thông tin và hàng cờ tung bay dưới bầu trời nắng nhẹ',
+    image: '/assets/post-uit-night.jpg',
+    alt: 'Biểu tượng UIT — University of Information Technology phát sáng ấm áp trong khuôn viên trường buổi tối',
   },
 ]
 

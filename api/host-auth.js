@@ -37,6 +37,30 @@ function verifySessionToken(token, signingKey) {
   return crypto.timingSafeEqual(actualBuf, expectedBuf)
 }
 
+export function verifyHostToken(token) {
+  const configuredPassword = process.env.HOST_PASSWORD || ''
+  if (!configuredPassword) {
+    return {
+      ok: false,
+      status: 503,
+      code: 'NOT_CONFIGURED',
+      error: 'Trang Host chưa được cấu hình biến môi trường HOST_PASSWORD trên máy chủ.',
+    }
+  }
+
+  const signingKey = getSigningKey(configuredPassword)
+  if (!verifySessionToken(token, signingKey)) {
+    return {
+      ok: false,
+      status: 401,
+      code: 'INVALID_TOKEN',
+      error: 'Phiên đăng nhập Host đã hết hạn hoặc không hợp lệ, vui lòng mở khóa lại.',
+    }
+  }
+
+  return { ok: true }
+}
+
 function sendJson(res, statusCode, data) {
   res.statusCode = statusCode
   res.setHeader('Content-Type', 'application/json; charset=utf-8')

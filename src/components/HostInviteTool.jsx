@@ -1,5 +1,13 @@
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { INITIAL_GUESTBOOK, NEWSLETTER } from '../data'
 import { useInvitation } from '../invitationContext'
+import {
+  buildInitialGuestbook,
+  dispatchNotesSync,
+  mergeServerNotes,
+  NOTES_SYNC_EVENT,
+  removeNoteFromLocalCaches,
+} from '../notesSync'
 import {
   buildPersonalizedCopy,
   detectPresetFromName,
@@ -16,6 +24,7 @@ import {
   EyeOffIcon,
   LinkIcon,
   LockIcon,
+  RefreshIcon,
   TrashIcon,
   XIcon,
 } from './Icons'
@@ -140,7 +149,7 @@ export default function HostInviteTool() {
     startGuestPreview({ preset: 'chung', name: '', note: '', overrides: {} })
   }
 
-  const handleLockSession = () => {
+  const handleLockSession = (notice = '') => {
     try {
       window.sessionStorage.removeItem(HOST_AUTH_TOKEN_KEY)
     } catch {
@@ -148,7 +157,7 @@ export default function HostInviteTool() {
     }
     setPassword('')
     setShowPassword(false)
-    setAuthError('')
+    setAuthError(typeof notice === 'string' ? notice : '')
     setAuthStatus('locked')
   }
 
@@ -315,6 +324,15 @@ function HostStudioWorkspace({ onLockSession }) {
   const [editingField, setEditingField] = useState(null) // { key, value } | null
   const [customSms, setCustomSms] = useState(null) // null = dùng SMS gợi ý theo vai vế
   const [copiedType, setCopiedType] = useState('') // 'link' | 'sms' | id | ''
+  const [activeTab, setActiveTab] = useState('links') // 'links' | 'notes'
+  const [notesList, setNotesList] = useState(() => buildInitialGuestbook(INITIAL_GUESTBOOK))
+  const [notesLoading, setNotesLoading] = useState(false)
+  const [notesSyncMeta, setNotesSyncMeta] = useState({ shared: true, backend: 'unknown' })
+  const [notesError, setNotesError] = useState('')
+  const [notesNotice, setNotesNotice] = useState('')
+  const [notesQuery, setNotesQuery] = useState('')
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null)
+  const [deletingId, setDeletingId] = useState(null)
   const [history, setHistory] = useState(() => {
     try {
       const saved = window.localStorage.getItem(HOST_HISTORY_KEY)
@@ -338,6 +356,129 @@ function HostStudioWorkspace({ onLockSession }) {
     const timer = setTimeout(() => setCopiedType(''), 2000)
     return () => clearTimeout(timer)
   }, [copiedType])
+
+  useEffect(() => {
+    if (!notesNotice) return undefined
+    const timer = setTimeout(() => setNotesNotice(''), 2800)
+    return () => clearTimeout(timer)
+  }, [notesNotice])
+
+  const loadManagedNotes = useCallback(async ({ silent = false } = {}) => {
+    if (!silent) setNotesLoading(true)
+    setNotesError('')
+    try {
+      const res = await fetch('/api/notes', { cache: 'no-store' })
+      const data = await res.json().catch(() => null)
+      if (!res.ok || !data?.ok || !Array.isArray(data.notes)) {
+        if (!silent) {
+          setNotesError(data?.error || 'Không thể tải danh sách lời chúc lúc này.')
+        }
+        return
+      }
+      const merged = mergeServerNotes(data)
+      setNotesList(merged)
+      setNotesSyncMeta({ shared: data.shared !== false, backend: data.backend || 'unknown' })
+      dispatchNotesSync({ notes: merged, shared: data.shared })
+    } catch {
+      if (!silent) {
+        setNotesError('Không thể kết nối máy chủ để đồng bộ lời chúc.')
+      }
+    } finally {
+      if (!silent) setNotesLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    loadManagedNotes({ silent: true })
+
+    const handleSync = (event) => {
+      if (Array.isArray(event?.detail?.notes)) {
+        setNotesList(event.detail.notes)
+      }
+    }
+    window.addEventListener(NOTES_SYNC_EVENT, handleSync)
+    return () => window.removeEventListener(NOTES_SYNC_EVENT, handleSync)
+  }, [loadManagedNotes])
+
+  const handleDeleteNote = async (entry) => {
+    const targetId = String(entry?.id || '')
+    if (!targetId || deletingId) return
+
+    let savedToken = ''
+    try {
+      savedToken = window.sessionStorage.getItem(HOST_AUTH_TOKEN_KEY) || ''
+    } catch {
+      savedToken = ''
+    }
+
+    if (!savedToken) {
+      onLockSession('Phiên đăng nhập Host đã hết hạn, vui lòng mở khóa lại.')
+      return
+    }
+
+    setDeletingId(targetId)
+    setNotesError('')
+    setNotesNotice('')
+
+    try {
+      const res = await fetch(`/api/notes?id=${encodeURIComponent(targetId)}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${savedToken}`,
+        },
+        body: JSON.stringify({ id: targetId }),
+      })
+      const data = await res.json().catch(() => null)
+
+      if (res.status === 401 || data?.code === 'INVALID_TOKEN') {
+        onLockSession(data?.error || 'Phiên đăng nhập Host đã hết hạn, vui lòng mở khóa lại.')
+        return
+      }
+
+      if (!res.ok && data?.code !== 'NOT_FOUND') {
+        setNotesError(data?.error || 'Không thể xóa tờ note lúc này, vui lòng thử lại.')
+        return
+      }
+
+      const isShared = data?.shared !== false
+      removeNoteFromLocalCaches(targetId, { trackLocalDelete: !isShared })
+
+      let nextNotes
+      if (Array.isArray(data?.notes)) {
+        nextNotes =
+          isShared ? data.notes : mergeServerNotes({ notes: data.notes, shared: false })
+      } else {
+        nextNotes = notesList.filter((item) => String(item?.id || '') !== targetId)
+      }
+
+      setNotesList(nextNotes)
+      setNotesSyncMeta((prev) => ({
+        shared: data?.shared ?? prev.shared,
+        backend: data?.backend || prev.backend,
+      }))
+      setConfirmDeleteId(null)
+      setNotesNotice(
+        isShared
+          ? `Đã xóa note của "${entry.name}" và đồng bộ tường lời chúc.`
+          : `Đã ẩn note của "${entry.name}" trên trình duyệt này (máy chủ đang ở chế độ tĩnh).`
+      )
+      dispatchNotesSync({ notes: nextNotes, deletedId: targetId, shared: isShared })
+    } catch {
+      setNotesError('Không thể kết nối máy chủ khi xóa tờ note. Vui lòng thử lại.')
+    } finally {
+      setDeletingId(null)
+    }
+  }
+
+  const filteredNotes = useMemo(() => {
+    const q = notesQuery.trim().toLowerCase()
+    if (!q) return notesList
+    return notesList.filter((item) => {
+      const haystack = `${item.name || ''} ${item.role || ''} ${item.message || ''}`.toLowerCase()
+      return haystack.includes(q)
+    })
+  }, [notesList, notesQuery])
 
   const cleanOverrides = useMemo(() => sanitizeOverrides(overrides), [overrides])
 
@@ -554,7 +695,7 @@ function HostStudioWorkspace({ onLockSession }) {
             <button
               type="button"
               className="host-studio__lock"
-              onClick={onLockSession}
+              onClick={() => onLockSession('')}
               aria-label="Khóa trang Host"
               title="Khóa trang Host"
             >
@@ -573,7 +714,40 @@ function HostStudioWorkspace({ onLockSession }) {
           </div>
         </div>
 
-        <div className="host-studio__grid">
+        <div className="host-studio__tabs" role="tablist" aria-label="Chức năng trang Host">
+          <button
+            type="button"
+            role="tab"
+            id="host-tab-links"
+            aria-selected={activeTab === 'links'}
+            className={`host-studio__tab${activeTab === 'links' ? ' is-active' : ''}`}
+            onClick={() => setActiveTab('links')}
+          >
+            <span>Tạo Link Cá Nhân Hóa</span>
+          </button>
+
+          <button
+            type="button"
+            role="tab"
+            id="host-tab-notes"
+            aria-selected={activeTab === 'notes'}
+            className={`host-studio__tab${activeTab === 'notes' ? ' is-active' : ''}`}
+            onClick={() => {
+              setActiveTab('notes')
+              loadManagedNotes({ silent: false })
+            }}
+          >
+            <span>Quản Lý Tờ Note</span>
+            <span className="host-studio__tab-count">{notesList.length}</span>
+          </button>
+        </div>
+
+        {activeTab === 'links' ? (
+          <div
+            className="host-studio__grid"
+            role="tabpanel"
+            aria-labelledby="host-tab-links"
+          >
           {/* Cột trái: Nhập thông tin khách & chọn xưng hô */}
           <div className="host-studio__col host-studio__col--form">
             <div className="host-field">
@@ -950,6 +1124,141 @@ function HostStudioWorkspace({ onLockSession }) {
             )}
           </div>
         </div>
+        ) : (
+          <div
+            className="host-notes"
+            role="tabpanel"
+            aria-labelledby="host-tab-notes"
+          >
+            <div className="host-notes__toolbar">
+              <div className="host-notes__status-group">
+                <span
+                  className={`host-notes__sync-pill${notesSyncMeta.shared ? ' is-synced' : ' is-local'}`}
+                >
+                  {notesSyncMeta.shared
+                    ? 'Đồng bộ trực tiếp với máy chủ'
+                    : 'Chế độ tĩnh (tạm lưu trình duyệt)'}
+                </span>
+                <span className="host-notes__total">
+                  Tổng: <strong>{notesList.length}</strong> tờ note
+                </span>
+              </div>
+
+              <div className="host-notes__controls">
+                <input
+                  type="search"
+                  className="minimal-input host-notes__search"
+                  placeholder="Tìm theo tên hoặc lời chúc..."
+                  aria-label="Tìm kiếm tờ note"
+                  value={notesQuery}
+                  onChange={(e) => setNotesQuery(e.target.value)}
+                />
+
+                <button
+                  type="button"
+                  className="pill pill--light host-notes__refresh"
+                  onClick={() => loadManagedNotes({ silent: false })}
+                  disabled={notesLoading}
+                >
+                  <RefreshIcon size={14} />
+                  <span>{notesLoading ? 'Đang đồng bộ...' : 'Đồng bộ lại'}</span>
+                </button>
+              </div>
+            </div>
+
+            {notesError && (
+              <p className="wishes-feedback wishes-feedback--error" role="status">
+                {notesError}
+              </p>
+            )}
+
+            {notesNotice && (
+              <div className="wishes-feedback wishes-feedback--success" role="status">
+                <CheckIcon size={16} />
+                <span>{notesNotice}</span>
+              </div>
+            )}
+
+            {filteredNotes.length === 0 ? (
+              <div className="host-notes__empty" role="status">
+                {notesList.length === 0
+                  ? 'Hiện chưa có tờ note nào trên tường lời chúc.'
+                  : 'Không tìm thấy tờ note nào khớp từ khóa bạn đang tìm.'}
+              </div>
+            ) : (
+              <ul className="host-notes__list">
+                {filteredNotes.map((entry, idx) => {
+                  const colorInfo =
+                    NEWSLETTER.noteColors.find((c) => c.id === entry.noteColor) ||
+                    NEWSLETTER.noteColors[idx % NEWSLETTER.noteColors.length]
+                  const isConfirming = confirmDeleteId === entry.id
+                  const isDeleting = deletingId === entry.id
+
+                  return (
+                    <li
+                      key={entry.id}
+                      className={`host-note-card${isConfirming ? ' is-confirming' : ''}`}
+                    >
+                      <div className="host-note-card__head">
+                        <div className="host-note-card__author">
+                          <span
+                            className="host-note-card__swatch"
+                            style={{ backgroundColor: colorInfo.swatch }}
+                            aria-hidden="true"
+                          />
+                          <div>
+                            <strong className="host-note-card__name">{entry.name}</strong>
+                            <span className="host-note-card__meta">
+                              {entry.role || 'Khách mời'}
+                              {entry.time ? ` · ${entry.time}` : ''}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="host-note-card__actions">
+                          {isConfirming ? (
+                            <>
+                              <button
+                                type="button"
+                                className="host-note-card__btn host-note-card__btn--confirm"
+                                onClick={() => handleDeleteNote(entry)}
+                                disabled={isDeleting}
+                              >
+                                <TrashIcon size={13} />
+                                <span>{isDeleting ? 'Đang xóa...' : 'Xác nhận xóa'}</span>
+                              </button>
+                              <button
+                                type="button"
+                                className="host-note-card__btn host-note-card__btn--cancel"
+                                onClick={() => setConfirmDeleteId(null)}
+                                disabled={isDeleting}
+                              >
+                                Hủy
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              type="button"
+                              className="host-note-card__btn host-note-card__btn--del"
+                              onClick={() => setConfirmDeleteId(entry.id)}
+                              disabled={Boolean(deletingId)}
+                              aria-label={`Xóa tờ note của ${entry.name}`}
+                            >
+                              <TrashIcon size={14} />
+                              <span>Xóa note</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      <p className="host-note-card__msg">{entry.message}</p>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

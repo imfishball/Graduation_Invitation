@@ -3,6 +3,15 @@ import confetti from 'canvas-confetti'
 import { INITIAL_GUESTBOOK, NEWSLETTER } from '../data'
 import { useInvitation } from '../invitationContext'
 import {
+  buildInitialGuestbook,
+  dispatchNotesSync,
+  LIKES_STORAGE_KEY,
+  mergeServerNotes,
+  NOTES_SYNC_EVENT,
+  readLocalFallbackNotes,
+  saveLocalFallbackNotes,
+} from '../notesSync'
+import {
   CheckIcon,
   ChevronDownIcon,
   FeatherPenIcon,
@@ -15,30 +24,17 @@ import {
 } from './Icons'
 import SectionHead from './SectionHead'
 
-const LOCAL_FALLBACK_KEY = 'graduation_guestbook_local_only_v1'
-const LIKES_STORAGE_KEY = 'graduation_guestbook_likes_v1'
-const NOTE_TILTS = ['-1.1deg', '0.9deg', '-0.7deg', '1deg']
+// 6 biến thể bất đối xứng hài hòa (trái dẫn nhịp - phải giật cấp nhẹ, góc xoay ±1.3°–2.1° kiểu Polaroid)
+const NOTE_LAYOUTS = [
+  { tilt: '-1.9deg', x: '-2px', y: '0px' },
+  { tilt: '1.5deg', x: '2px', y: '14px' },
+  { tilt: '1.3deg', x: '2px', y: '4px' },
+  { tilt: '-2.1deg', x: '-2px', y: '12px' },
+  { tilt: '-1.5deg', x: '-1px', y: '2px' },
+  { tilt: '1.8deg', x: '2px', y: '16px' },
+]
 const FASTENERS = ['tape-stripe', 'tape-dots', 'pushpin', 'tape-grid']
 const DOODLES = ['star', 'heart', 'flower', 'sparkle']
-
-function readLocalFallbackNotes() {
-  try {
-    const saved = localStorage.getItem(LOCAL_FALLBACK_KEY)
-    if (!saved) return []
-    const parsed = JSON.parse(saved)
-    return Array.isArray(parsed) ? parsed : []
-  } catch {
-    return []
-  }
-}
-
-function saveLocalFallbackNotes(notes) {
-  try {
-    localStorage.setItem(LOCAL_FALLBACK_KEY, JSON.stringify(notes))
-  } catch {
-    // Bỏ qua nếu trình duyệt chặn localStorage
-  }
-}
 
 export default function Newsletter() {
   const { copy } = useInvitation()
@@ -52,10 +48,7 @@ export default function Newsletter() {
   const [message, setMessage] = useState('')
   const [status, setStatus] = useState('idle') // idle | submitting | success | error
   const [errorMsg, setErrorMsg] = useState('')
-  const [guestbook, setGuestbook] = useState(() => {
-    const localOnly = readLocalFallbackNotes()
-    return localOnly.length > 0 ? [...localOnly, ...INITIAL_GUESTBOOK] : INITIAL_GUESTBOOK
-  })
+  const [guestbook, setGuestbook] = useState(() => buildInitialGuestbook(INITIAL_GUESTBOOK))
   const [newestId, setNewestId] = useState(null)
   const [selectedNote, setSelectedNote] = useState(null)
   const [likedIds, setLikedIds] = useState(() => {
@@ -67,7 +60,7 @@ export default function Newsletter() {
     }
   })
 
-  // Tải bảng giấy note dùng chung từ file JSON qua /api/notes
+  // Tải bảng giấy note dùng chung từ file JSON / KV / Gist qua /api/notes
   useEffect(() => {
     let active = true
 
@@ -78,15 +71,7 @@ export default function Newsletter() {
         const data = await res.json()
         if (!active || !data?.ok || !Array.isArray(data.notes)) return
 
-        const serverNotes = data.notes
-        if (data.shared === false) {
-          const localOnly = readLocalFallbackNotes()
-          const serverIds = new Set(serverNotes.map((item) => item.id))
-          const extraLocal = localOnly.filter((item) => item && !serverIds.has(item.id))
-          setGuestbook([...extraLocal, ...serverNotes])
-        } else {
-          setGuestbook(serverNotes.length > 0 ? serverNotes : INITIAL_GUESTBOOK)
-        }
+        setGuestbook(mergeServerNotes(data))
       } catch {
         // Giữ dữ liệu mặc định + local fallback nếu tạm mất kết nối
       }
@@ -94,15 +79,32 @@ export default function Newsletter() {
 
     fetchNotes()
 
+    const handleNotesSync = (event) => {
+      const nextNotes = event?.detail?.notes
+      if (Array.isArray(nextNotes)) {
+        setGuestbook(nextNotes)
+        const deletedId = event?.detail?.deletedId
+        if (deletedId) {
+          setSelectedNote((prev) =>
+            prev && String(prev.id) === String(deletedId) ? null : prev
+          )
+        }
+      } else {
+        fetchNotes()
+      }
+    }
+
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
         fetchNotes()
       }
     }
+    window.addEventListener(NOTES_SYNC_EVENT, handleNotesSync)
     document.addEventListener('visibilitychange', handleVisibilityChange)
 
     return () => {
       active = false
+      window.removeEventListener(NOTES_SYNC_EVENT, handleNotesSync)
       document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
   }, [])
@@ -220,11 +222,14 @@ export default function Newsletter() {
         saveLocalFallbackNotes(nextLocalOnly)
       }
 
-      if (Array.isArray(data.notes) && data.notes.length > 0) {
-        setGuestbook(data.notes)
-      } else {
-        setGuestbook((prev) => [data.note, ...prev])
-      }
+      const nextList =
+        data.shared === false
+          ? mergeServerNotes(data)
+          : Array.isArray(data.notes)
+            ? data.notes
+            : [data.note, ...guestbook]
+      setGuestbook(nextList)
+      dispatchNotesSync({ notes: nextList, shared: data.shared })
       setNewestId(data.note.id)
 
       triggerConfetti()
@@ -250,7 +255,9 @@ export default function Newsletter() {
       }
       const nextLocalOnly = [fallbackEntry, ...readLocalFallbackNotes()]
       saveLocalFallbackNotes(nextLocalOnly)
-      setGuestbook((prev) => [fallbackEntry, ...prev])
+      const nextList = [fallbackEntry, ...guestbook]
+      setGuestbook(nextList)
+      dispatchNotesSync({ notes: nextList, shared: false })
       setNewestId(id)
 
       triggerConfetti()
@@ -513,8 +520,13 @@ export default function Newsletter() {
 
               <div className="notes-board__frame">
                 <div className="notes-board__scroll" data-lenis-prevent>
-                  <div className="notes-grid">
-                    {guestbook.map((entry, idx) => {
+                  {guestbook.length === 0 ? (
+                    <div className="notes-board__empty" role="status">
+                      Chưa có tờ note nào trên bảng. Hãy là người đầu tiên gửi lời chúc cho Mai nhé!
+                    </div>
+                  ) : (
+                    <div className="notes-grid">
+                      {guestbook.map((entry, idx) => {
                       const isLiked = !!likedIds[entry.id]
                       const isFresh = entry.id === newestId
                       const colorId =
@@ -522,14 +534,18 @@ export default function Newsletter() {
                         NEWSLETTER.noteColors[idx % NEWSLETTER.noteColors.length].id
                       const fastener = entry.fastener || FASTENERS[idx % FASTENERS.length]
                       const doodle = entry.doodle || DOODLES[idx % DOODLES.length]
-                      const tilt = NOTE_TILTS[idx % NOTE_TILTS.length]
+                      const layout = NOTE_LAYOUTS[idx % NOTE_LAYOUTS.length]
                       const hasPaperclip = fastener === 'tape-grid'
 
                       return (
                         <article
                           className={`sticky-note sticky-note--${colorId} ${isFresh ? 'is-fresh' : ''}`}
                           key={entry.id}
-                          style={{ '--note-tilt': tilt }}
+                          style={{
+                            '--note-tilt': layout.tilt,
+                            '--note-x': layout.x,
+                            '--note-y': layout.y,
+                          }}
                           role="button"
                           tabIndex={0}
                           aria-label={`Xem trọn vẹn lời chúc của ${entry.name}`}
@@ -592,7 +608,8 @@ export default function Newsletter() {
                         </article>
                       )
                     })}
-                  </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
