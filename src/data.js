@@ -41,7 +41,7 @@ export const HERO = {
   feature: {
     eyebrow: 'Khoảnh khắc trọng đại',
     location: 'UIT ĐHQG-HCM • 15:00 – 17:00',
-    title: 'Gặp Gỡ & Chụp Ảnh Kỷ Niệm Tốt Nghiệp',
+    title: 'Lễ tốt nghiệp của mình <3333',
   },
 }
 

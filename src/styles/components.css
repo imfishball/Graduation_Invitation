@@ -22,7 +22,6 @@
     background-color var(--dur-base) ease,
     box-shadow var(--dur-base) ease,
     opacity var(--dur-fast) linear;
-  will-change: transform;
 }
 
 .pill:hover {
@@ -108,7 +107,6 @@
     transform 400ms var(--ease-framer),
     background-color 350ms ease,
     box-shadow 400ms ease;
-  will-change: transform;
 }
 
 .post-card:hover {
@@ -300,7 +298,6 @@
     transform 450ms var(--ease-spring-soft),
     box-shadow 450ms ease,
     z-index 0s linear;
-  will-change: transform;
 }
 
 .polaroid-hang:hover .polaroid,

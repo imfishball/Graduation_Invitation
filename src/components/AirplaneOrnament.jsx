@@ -9,35 +9,50 @@ export default function AirplaneOrnament({ className = '' }) {
   const containerRef = useRef(null)
 
   useEffect(() => {
+    const el = containerRef.current
+    if (!el) return undefined
+
     let rafId = 0
     let ticking = false
+    let isNearViewport = false
+
+    const update = () => {
+      ticking = false
+      if (!isNearViewport) return
+      const rect = el.getBoundingClientRect()
+      const windowHeight = window.innerHeight
+      const progress = (windowHeight - rect.top) / (windowHeight + rect.height + 250)
+      const clamped = Math.max(-0.2, Math.min(1.2, progress))
+      const travel = (clamped - 0.5) * -110
+      el.style.setProperty('--plane-scroll-x', `${travel}px`)
+      el.style.setProperty('--plane-scroll-y', `${travel}px`)
+    }
 
     const handleScroll = () => {
-      if (!ticking) {
-        ticking = true
-        rafId = requestAnimationFrame(() => {
-          const el = containerRef.current
-          if (el) {
-            const rect = el.getBoundingClientRect()
-            const windowHeight = window.innerHeight
-            // Progress: 0 khi phần tử bắt đầu vào đáy màn hình, 1 khi cuộn qua đỉnh
-            const progress = (windowHeight - rect.top) / (windowHeight + rect.height + 250)
-            const clamped = Math.max(-0.2, Math.min(1.2, progress))
+      if (!isNearViewport || ticking) return
+      ticking = true
+      rafId = requestAnimationFrame(update)
+    }
 
-            // Bay chéo góc 45° hướng về phía trước (lướt từ dưới-phải lên trên-trái)
-            const travel = (clamped - 0.5) * -110
-            el.style.setProperty('--plane-scroll-x', `${travel}px`)
-            el.style.setProperty('--plane-scroll-y', `${travel}px`)
-          }
-          ticking = false
-        })
-      }
+    let observer = null
+    if ('IntersectionObserver' in window) {
+      observer = new IntersectionObserver(
+        (entries) => {
+          isNearViewport = Boolean(entries[0]?.isIntersecting)
+          if (isNearViewport) handleScroll()
+        },
+        { rootMargin: '250px 0px' }
+      )
+      observer.observe(el)
+    } else {
+      isNearViewport = true
+      handleScroll()
     }
 
     window.addEventListener('scroll', handleScroll, { passive: true })
-    handleScroll()
 
     return () => {
+      observer?.disconnect()
       window.removeEventListener('scroll', handleScroll)
       cancelAnimationFrame(rafId)
     }

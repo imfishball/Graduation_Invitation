@@ -6,23 +6,32 @@ export default function StickyBottomBar() {
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
+    let ticking = false
+
+    const update = () => {
+      const next = (window.scrollY || window.pageYOffset || 0) > 320
+      setVisible((prev) => (prev === next ? prev : next))
+      ticking = false
+    }
+
     const handleScroll = () => {
-      // Hiện thanh khi cuộn qua 300px (qua khỏi Hero)
-      if (window.scrollY > 320) {
-        setVisible(true)
-      } else {
-        setVisible(false)
+      if (!ticking) {
+        ticking = true
+        requestAnimationFrame(update)
       }
     }
 
+    update()
     window.addEventListener('scroll', handleScroll, { passive: true })
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
-  if (!visible) return null
-
   return (
-    <aside className="mobile-bottom-bar" aria-label="Thao tác nhanh">
+    <aside
+      className={`mobile-bottom-bar${visible ? ' is-visible' : ''}`}
+      aria-label="Thao tác nhanh"
+      aria-hidden={!visible}
+    >
       <div className="mobile-bottom-bar__inner">
         <a
           href={GRADUATION_INFO.googleMapsUrl}

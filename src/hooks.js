@@ -97,22 +97,23 @@ function useReducedMotion() {
 }
 
 /**
- * Cuộn mượt quán tính (Lenis smooth inertia scroll)
+ * Cuộn mượt quán tính trên desktop (wheel); mobile cảm ứng dùng cuộn gốc (compositor scroll)
  */
 export function useSmoothScroll() {
   const reduced = useReducedMotion()
 
   useEffect(() => {
-    if (reduced) return
+    if (reduced) return undefined
+    const isCoarsePointer = window.matchMedia?.('(pointer: coarse)')?.matches ?? false
+    if (isCoarsePointer) return undefined
 
     const lenis = new Lenis({
-      duration: 1.2,
+      duration: 1.1,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       orientation: 'vertical',
       gestureOrientation: 'vertical',
       smoothWheel: true,
       wheelMultiplier: 1,
-      touchMultiplier: 2,
     })
 
     let rafId = 0
@@ -132,83 +133,125 @@ export function useSmoothScroll() {
 
 /**
  * Hiệu ứng Reveal khi cuộn: quan sát .reveal và .reveal-group
- * Sử dụng IntersectionObserver hiệu năng cao kèm fallback kiểm tra hình học
+ * - Dùng IntersectionObserver gốc (0 reflow mỗi frame cuộn)
+ * - Chạy một lần duy nhất rồi tự hủy quan sát để tránh giật lag
  */
 export function useReveal() {
   const reduced = useReducedMotion()
 
   useEffect(() => {
     const elements = Array.from(document.querySelectorAll('.reveal, .reveal-group'))
+    if (!elements.length) return undefined
+
     if (reduced) {
       elements.forEach((el) => el.classList.add('is-visible'))
-      return
+      return undefined
     }
 
-    const checkVisible = () => {
-      const triggerY = window.innerHeight + 160
-      elements.forEach((el) => {
+    let observer = null
+    let remaining = elements.length
+    const triggerOffset = 18
+
+    const cleanupAll = () => {
+      observer?.disconnect()
+      window.removeEventListener('resize', checkVisible)
+      window.removeEventListener('hashchange', checkVisible)
+      document.removeEventListener('click', onAnchorClick)
+    }
+
+    const markVisible = (el) => {
+      if (el.classList.contains('is-visible')) return
+      el.classList.add('is-visible')
+      observer?.unobserve(el)
+      remaining -= 1
+      if (remaining <= 0) {
+        cleanupAll()
+      }
+    }
+
+    const revealBatch = (targets) => {
+      if (!targets.length) return
+
+      const pendingCards = []
+      const immediate = []
+
+      targets.forEach((el) => {
         if (el.classList.contains('is-visible')) return
         const rect = el.getBoundingClientRect()
-        if (rect.top < triggerY) {
-          el.classList.add('is-visible')
+        if (el.hasAttribute('data-reveal-card') && rect.bottom >= 0) {
+          pendingCards.push({ el, top: rect.top, left: rect.left })
+        } else {
+          immediate.push(el)
         }
       })
+
+      immediate.forEach(markVisible)
+
+      if (pendingCards.length) {
+        pendingCards.sort((a, b) =>
+          Math.abs(a.top - b.top) <= 44 ? a.left - b.left : a.top - b.top
+        )
+        pendingCards.forEach(({ el }, idx) => {
+          const delayMs = Math.min(idx, 5) * 120
+          el.style.setProperty('--reveal-delay', `${delayMs}ms`)
+          markVisible(el)
+        })
+      }
     }
 
-    let scrollRaf = 0
-    const onScrollOrResize = () => {
-      if (scrollRaf) return
-      scrollRaf = requestAnimationFrame(() => {
-        scrollRaf = 0
-        checkVisible()
+    function checkVisible() {
+      if (remaining <= 0) return
+      const triggerY = window.innerHeight - triggerOffset
+      const hitting = elements.filter((el) => {
+        if (el.classList.contains('is-visible')) return false
+        return el.getBoundingClientRect().top <= triggerY
       })
+      if (hitting.length) {
+        revealBatch(hitting)
+      }
     }
 
-    const onAnchorClick = (event) => {
+    function onAnchorClick(event) {
       if (event.target.closest('a[href^="#"]')) {
         setTimeout(checkVisible, 80)
         setTimeout(checkVisible, 360)
+        setTimeout(checkVisible, 720)
       }
     }
 
     if ('IntersectionObserver' in window) {
-      const observer = new IntersectionObserver(
+      observer = new IntersectionObserver(
         (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              entry.target.classList.add('is-visible')
-              observer.unobserve(entry.target)
-            }
-          })
+          const entering = entries
+            .filter((entry) => entry.isIntersecting)
+            .map((entry) => entry.target)
+          if (entering.length) {
+            revealBatch(entering)
+          }
         },
         {
           threshold: 0.01,
-          rootMargin: '140px 0px 80px 0px',
+          rootMargin: `0px 0px -${triggerOffset}px 0px`,
         }
       )
 
       elements.forEach((el) => observer.observe(el))
 
       checkVisible()
-      window.addEventListener('scroll', onScrollOrResize, { passive: true })
-      window.addEventListener('resize', onScrollOrResize, { passive: true })
+      window.addEventListener('resize', checkVisible, { passive: true })
       window.addEventListener('hashchange', checkVisible)
       document.addEventListener('click', onAnchorClick)
 
       const timer = setTimeout(checkVisible, 600)
 
       return () => {
-        observer.disconnect()
-        if (scrollRaf) cancelAnimationFrame(scrollRaf)
-        window.removeEventListener('scroll', onScrollOrResize)
-        window.removeEventListener('resize', onScrollOrResize)
-        window.removeEventListener('hashchange', checkVisible)
-        document.removeEventListener('click', onAnchorClick)
+        cleanupAll()
         clearTimeout(timer)
       }
-    } else {
-      elements.forEach((el) => el.classList.add('is-visible'))
     }
+
+    elements.forEach((el) => el.classList.add('is-visible'))
+    return undefined
   }, [reduced])
 }
 
@@ -221,74 +264,107 @@ export function useHeaderSolid() {
 
   useEffect(() => {
     let ticking = false
+    let threshold = 750
+
+    const measure = () => {
+      const hero = document.getElementById('top')
+      threshold = hero ? Math.max(120, hero.offsetHeight - 70) : 750
+    }
+
+    const update = () => {
+      const next = (window.scrollY || window.pageYOffset || 0) >= threshold
+      setSolid((prev) => (prev === next ? prev : next))
+      ticking = false
+    }
 
     const onScroll = () => {
       if (!ticking) {
-        requestAnimationFrame(() => {
-          const hero = document.getElementById('top')
-          if (hero) {
-            const rect = hero.getBoundingClientRect()
-            setSolid(rect.bottom <= 70)
-          } else {
-            setSolid(window.scrollY > 750)
-          }
-          ticking = false
-        })
         ticking = true
+        requestAnimationFrame(update)
       }
     }
 
+    const onResize = () => {
+      measure()
+      onScroll()
+    }
+
+    measure()
+    update()
+
     window.addEventListener('scroll', onScroll, { passive: true })
-    window.addEventListener('resize', onScroll, { passive: true })
-    onScroll()
+    window.addEventListener('resize', onResize, { passive: true })
 
     return () => {
       window.removeEventListener('scroll', onScroll)
-      window.removeEventListener('resize', onScroll)
+      window.removeEventListener('resize', onResize)
     }
   }, [])
 
   return solid
 }
 
-/** Đánh dấu mục nav đang hiển thị (scroll spy) */
+/** Đánh dấu mục nav đang hiển thị (scroll spy) không gây layout thrashing */
 export function useScrollSpy(ids) {
   const [activeId, setActiveId] = useState(ids[0])
 
   useEffect(() => {
     let ticking = false
+    let cachedOffsets = []
+    let maxScroll = 0
+
+    const measure = () => {
+      cachedOffsets = ids
+        .map((id) => {
+          const el = document.getElementById(id)
+          return el ? { id, top: el.offsetTop } : null
+        })
+        .filter(Boolean)
+      maxScroll = document.documentElement.scrollHeight - window.innerHeight
+    }
 
     const update = () => {
-      const line = window.scrollY + window.innerHeight * 0.35
+      const y = window.scrollY || window.pageYOffset || 0
+      const line = y + window.innerHeight * 0.35
       let current = ids[0]
 
-      for (const id of ids) {
-        const el = document.getElementById(id)
-        if (el && el.offsetTop <= line) current = id
+      for (let i = 0; i < cachedOffsets.length; i++) {
+        if (cachedOffsets[i].top <= line) {
+          current = cachedOffsets[i].id
+        }
       }
 
-      if (window.innerHeight + window.scrollY >= document.body.scrollHeight - 20) {
+      if (maxScroll > 0 && y >= maxScroll - 24) {
         current = ids[ids.length - 1]
       }
 
-      setActiveId(current)
+      setActiveId((prev) => (prev === current ? prev : current))
       ticking = false
     }
 
     const onScroll = () => {
       if (!ticking) {
-        requestAnimationFrame(update)
         ticking = true
+        requestAnimationFrame(update)
       }
     }
 
-    window.addEventListener('scroll', onScroll, { passive: true })
-    window.addEventListener('resize', onScroll, { passive: true })
+    const onResize = () => {
+      measure()
+      onScroll()
+    }
+
+    measure()
     update()
 
+    const remeasureTimer = setTimeout(measure, 600)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    window.addEventListener('resize', onResize, { passive: true })
+
     return () => {
+      clearTimeout(remeasureTimer)
       window.removeEventListener('scroll', onScroll)
-      window.removeEventListener('resize', onScroll)
+      window.removeEventListener('resize', onResize)
     }
   }, [ids])
 

@@ -298,6 +298,44 @@ export default function WaterRipple({
       return
     }
 
+    const trailLocs = {
+      buffer: gl.getUniformLocation(trailProg, 'u_rippleTrail_buffer'),
+      resolution: gl.getUniformLocation(trailProg, 'u_resolution'),
+      pixelRatio: gl.getUniformLocation(trailProg, 'u_pixelRatio'),
+      deltaTime: gl.getUniformLocation(trailProg, 'u_deltaTime'),
+      mousePosition: gl.getUniformLocation(trailProg, 'u_mousePosition'),
+      mousePointerDown: gl.getUniformLocation(trailProg, 'u_mousePointerDown'),
+      mouseHover: gl.getUniformLocation(trailProg, 'u_mouseHover'),
+      trailDecay: gl.getUniformLocation(trailProg, 'u_trailDecay'),
+      trailRadius: gl.getUniformLocation(trailProg, 'u_trailRadius'),
+      trailSoftness: gl.getUniformLocation(trailProg, 'u_trailSoftness'),
+      centerFade: gl.getUniformLocation(trailProg, 'u_centerFade'),
+      trailStrength: gl.getUniformLocation(trailProg, 'u_trailStrength'),
+    }
+
+    const clickLocs = {
+      buffer: gl.getUniformLocation(clickProg, 'u_clickState_buffer'),
+      deltaTime: gl.getUniformLocation(clickProg, 'u_deltaTime'),
+      mousePointerDown: gl.getUniformLocation(clickProg, 'u_mousePointerDown'),
+      mousePosition: gl.getUniformLocation(clickProg, 'u_mousePosition'),
+      trailDecay: gl.getUniformLocation(clickProg, 'u_trailDecay'),
+    }
+
+    const mainLocs = {
+      texture: gl.getUniformLocation(mainProg, 'u_texture'),
+      trailBuffer: gl.getUniformLocation(mainProg, 'u_rippleTrail_buffer'),
+      clickBuffer: gl.getUniformLocation(mainProg, 'u_clickState_buffer'),
+      resolution: gl.getUniformLocation(mainProg, 'u_resolution'),
+      pixelRatio: gl.getUniformLocation(mainProg, 'u_pixelRatio'),
+      trailDecay: gl.getUniformLocation(mainProg, 'u_trailDecay'),
+      trailRadius: gl.getUniformLocation(mainProg, 'u_trailRadius'),
+      trailStrength: gl.getUniformLocation(mainProg, 'u_trailStrength'),
+      trailDisplacement: gl.getUniformLocation(mainProg, 'u_trailDisplacement'),
+      dispersion: gl.getUniformLocation(mainProg, 'u_dispersion'),
+      clickRipple: gl.getUniformLocation(mainProg, 'u_clickRipple'),
+      clickSpeed: gl.getUniformLocation(mainProg, 'u_clickSpeed'),
+    }
+
     // Quad geometry
     const quadVao = gl.createVertexArray()
     gl.bindVertexArray(quadVao)
@@ -398,6 +436,7 @@ export default function WaterRipple({
     }
 
     // Listen on hero section and window
+    let isHeroVisible = true
     const heroSection = canvas.closest('section') || canvas.parentElement
     if (heroSection) {
       heroSection.addEventListener('pointerenter', onPointerMove, { passive: true })
@@ -407,14 +446,18 @@ export default function WaterRipple({
       window.addEventListener('pointerup', onPointerUp, { passive: true })
     }
 
+    const isCoarsePointer = window.matchMedia?.('(pointer: coarse)')?.matches ?? false
+    const maxDpr = isCoarsePointer ? 1.25 : 1.75
+    const simTarget = isCoarsePointer ? 420 : 800
+
     let animId = 0
-    let dpr = Math.min(window.devicePixelRatio || 1, 2)
+    let dpr = Math.min(window.devicePixelRatio || 1, maxDpr)
 
     function resize() {
       const w = canvas.clientWidth
       const h = canvas.clientHeight
       if (!w || !h) return
-      dpr = Math.min(window.devicePixelRatio || 1, 2)
+      dpr = Math.min(window.devicePixelRatio || 1, maxDpr)
       const renderW = Math.round(w * dpr)
       const renderH = Math.round(h * dpr)
       if (canvas.width !== renderW || canvas.height !== renderH) {
@@ -422,10 +465,10 @@ export default function WaterRipple({
         canvas.height = renderH
       }
 
-      // Proportional simulation resolution aligned with simDetail = 800
+      // Proportional simulation resolution
       const ref = Math.sqrt(w * h)
-      const newSimW = Math.max(64, Math.round((w / ref) * 800))
-      const newSimH = Math.max(64, Math.round((h / ref) * 800))
+      const newSimW = Math.max(64, Math.round((w / ref) * simTarget))
+      const newSimH = Math.max(64, Math.round((h / ref) * simTarget))
       if (newSimW !== simW || newSimH !== simH) {
         simW = newSimW
         simH = newSimH
@@ -441,6 +484,10 @@ export default function WaterRipple({
     resize()
 
     function render(now) {
+      if (isDisposed || !isHeroVisible || document.hidden) {
+        animId = 0
+        return
+      }
       animId = requestAnimationFrame(render)
       if (!imgLoaded) return
 
@@ -469,19 +516,19 @@ export default function WaterRipple({
 
       gl.activeTexture(gl.TEXTURE0)
       gl.bindTexture(gl.TEXTURE_2D, readTrail.tex)
-      gl.uniform1i(gl.getUniformLocation(trailProg, 'u_rippleTrail_buffer'), 0)
+      gl.uniform1i(trailLocs.buffer, 0)
 
-      gl.uniform2f(gl.getUniformLocation(trailProg, 'u_resolution'), canvas.width, canvas.height)
-      gl.uniform1f(gl.getUniformLocation(trailProg, 'u_pixelRatio'), dpr)
-      gl.uniform1f(gl.getUniformLocation(trailProg, 'u_deltaTime'), dt)
-      gl.uniform4f(gl.getUniformLocation(trailProg, 'u_mousePosition'), mouseX, mouseY, velX, velY)
-      gl.uniform1f(gl.getUniformLocation(trailProg, 'u_mousePointerDown'), isDown)
-      gl.uniform1f(gl.getUniformLocation(trailProg, 'u_mouseHover'), isHover)
-      gl.uniform1f(gl.getUniformLocation(trailProg, 'u_trailDecay'), trailDecay)
-      gl.uniform1f(gl.getUniformLocation(trailProg, 'u_trailRadius'), trailRadius)
-      gl.uniform1f(gl.getUniformLocation(trailProg, 'u_trailSoftness'), trailSoftness)
-      gl.uniform1f(gl.getUniformLocation(trailProg, 'u_centerFade'), centerFade)
-      gl.uniform1f(gl.getUniformLocation(trailProg, 'u_trailStrength'), trailStrength)
+      gl.uniform2f(trailLocs.resolution, canvas.width, canvas.height)
+      gl.uniform1f(trailLocs.pixelRatio, dpr)
+      gl.uniform1f(trailLocs.deltaTime, dt)
+      gl.uniform4f(trailLocs.mousePosition, mouseX, mouseY, velX, velY)
+      gl.uniform1f(trailLocs.mousePointerDown, isDown)
+      gl.uniform1f(trailLocs.mouseHover, isHover)
+      gl.uniform1f(trailLocs.trailDecay, trailDecay)
+      gl.uniform1f(trailLocs.trailRadius, trailRadius)
+      gl.uniform1f(trailLocs.trailSoftness, trailSoftness)
+      gl.uniform1f(trailLocs.centerFade, centerFade)
+      gl.uniform1f(trailLocs.trailStrength, trailStrength)
 
       gl.drawArrays(gl.TRIANGLES, 0, 6)
 
@@ -496,12 +543,12 @@ export default function WaterRipple({
 
       gl.activeTexture(gl.TEXTURE0)
       gl.bindTexture(gl.TEXTURE_2D, readClick.tex)
-      gl.uniform1i(gl.getUniformLocation(clickProg, 'u_clickState_buffer'), 0)
+      gl.uniform1i(clickLocs.buffer, 0)
 
-      gl.uniform1f(gl.getUniformLocation(clickProg, 'u_deltaTime'), dt)
-      gl.uniform1f(gl.getUniformLocation(clickProg, 'u_mousePointerDown'), isDown)
-      gl.uniform4f(gl.getUniformLocation(clickProg, 'u_mousePosition'), mouseX, mouseY, velX, velY)
-      gl.uniform1f(gl.getUniformLocation(clickProg, 'u_trailDecay'), trailDecay)
+      gl.uniform1f(clickLocs.deltaTime, dt)
+      gl.uniform1f(clickLocs.mousePointerDown, isDown)
+      gl.uniform4f(clickLocs.mousePosition, mouseX, mouseY, velX, velY)
+      gl.uniform1f(clickLocs.trailDecay, trailDecay)
 
       gl.drawArrays(gl.TRIANGLES, 0, 6)
 
@@ -512,25 +559,25 @@ export default function WaterRipple({
 
       gl.activeTexture(gl.TEXTURE0)
       gl.bindTexture(gl.TEXTURE_2D, bgTex)
-      gl.uniform1i(gl.getUniformLocation(mainProg, 'u_texture'), 0)
+      gl.uniform1i(mainLocs.texture, 0)
 
       gl.activeTexture(gl.TEXTURE1)
       gl.bindTexture(gl.TEXTURE_2D, writeTrail.tex)
-      gl.uniform1i(gl.getUniformLocation(mainProg, 'u_rippleTrail_buffer'), 1)
+      gl.uniform1i(mainLocs.trailBuffer, 1)
 
       gl.activeTexture(gl.TEXTURE2)
       gl.bindTexture(gl.TEXTURE_2D, writeClick.tex)
-      gl.uniform1i(gl.getUniformLocation(mainProg, 'u_clickState_buffer'), 2)
+      gl.uniform1i(mainLocs.clickBuffer, 2)
 
-      gl.uniform2f(gl.getUniformLocation(mainProg, 'u_resolution'), canvas.width, canvas.height)
-      gl.uniform1f(gl.getUniformLocation(mainProg, 'u_pixelRatio'), dpr)
-      gl.uniform1f(gl.getUniformLocation(mainProg, 'u_trailDecay'), trailDecay)
-      gl.uniform1f(gl.getUniformLocation(mainProg, 'u_trailRadius'), trailRadius)
-      gl.uniform1f(gl.getUniformLocation(mainProg, 'u_trailStrength'), trailStrength)
-      gl.uniform1f(gl.getUniformLocation(mainProg, 'u_trailDisplacement'), trailDisplacement)
-      gl.uniform1f(gl.getUniformLocation(mainProg, 'u_dispersion'), dispersion)
-      gl.uniform1f(gl.getUniformLocation(mainProg, 'u_clickRipple'), clickRipple ? 1.0 : 0.0)
-      gl.uniform1f(gl.getUniformLocation(mainProg, 'u_clickSpeed'), clickSpeed)
+      gl.uniform2f(mainLocs.resolution, canvas.width, canvas.height)
+      gl.uniform1f(mainLocs.pixelRatio, dpr)
+      gl.uniform1f(mainLocs.trailDecay, trailDecay)
+      gl.uniform1f(mainLocs.trailRadius, trailRadius)
+      gl.uniform1f(mainLocs.trailStrength, trailStrength)
+      gl.uniform1f(mainLocs.trailDisplacement, trailDisplacement)
+      gl.uniform1f(mainLocs.dispersion, dispersion)
+      gl.uniform1f(mainLocs.clickRipple, clickRipple ? 1.0 : 0.0)
+      gl.uniform1f(mainLocs.clickSpeed, clickSpeed)
 
       gl.drawArrays(gl.TRIANGLES, 0, 6)
 
@@ -542,12 +589,42 @@ export default function WaterRipple({
       gl.bindTexture(gl.TEXTURE_2D, null)
     }
 
-    animId = requestAnimationFrame(render)
+    const syncRenderState = () => {
+      if (isDisposed) return
+      if (isHeroVisible && !document.hidden) {
+        if (!animId) {
+          lastTime = performance.now()
+          animId = requestAnimationFrame(render)
+        }
+      } else if (animId) {
+        cancelAnimationFrame(animId)
+        animId = 0
+      }
+    }
+
+    let visibilityObserver = null
+    if ('IntersectionObserver' in window) {
+      visibilityObserver = new IntersectionObserver(
+        (entries) => {
+          const entry = entries[0]
+          if (!entry) return
+          isHeroVisible = entry.isIntersecting
+          syncRenderState()
+        },
+        { rootMargin: '120px 0px', threshold: 0.01 }
+      )
+      visibilityObserver.observe(heroSection || canvas)
+    }
+
+    document.addEventListener('visibilitychange', syncRenderState)
+    syncRenderState()
 
     return () => {
       isDisposed = true
       img.onload = null
-      cancelAnimationFrame(animId)
+      if (animId) cancelAnimationFrame(animId)
+      visibilityObserver?.disconnect()
+      document.removeEventListener('visibilitychange', syncRenderState)
       window.removeEventListener('resize', resize)
       if (heroSection) {
         heroSection.removeEventListener('pointerenter', onPointerMove)

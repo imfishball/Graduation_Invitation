@@ -46,29 +46,29 @@ export default function CountdownTimer() {
   return (
     <section className="section countdown-section" id="countdown" aria-label="Thời gian và đếm ngược">
       <div className="container">
-        <div className="section-head reveal">
+        <div className="section-head reveal-group">
           {copy.isPersonalized && (
-            <div className="section-head__guest-pill">
+            <div className="section-head__guest-pill reveal-item" style={{ '--stagger': 0 }}>
               <span>{copy.countdownPillPrefix}</span>
               <span className="guest-pill__dot" aria-hidden="true">•</span>
               <strong>{copy.callName}</strong>
             </div>
           )}
-          <p className="section-head__tagline">save the date</p>
-          <h2 className="section-head__title">Thời Gian Buổi Lễ</h2>
+          <p className="section-head__tagline reveal-item" style={{ '--stagger': 0 }}>save the date</p>
+          <h2 className="section-head__title reveal-item" style={{ '--stagger': 1 }}>Thời Gian Buổi Lễ</h2>
         </div>
 
-        <div className="countdown-open reveal">
+        <div className="countdown-open reveal-group">
           {/* Cột 1: Lịch tháng 11 với ngày 27 viền trái tim */}
-          <div className="countdown-open__calendar">
+          <div className="countdown-open__calendar reveal-item" style={{ '--stagger': 0 }}>
             <MonthCalendar />
           </div>
 
-          <div className="countdown-open__divider" aria-hidden="true" />
+          <div className="countdown-open__divider reveal-item" style={{ '--stagger': 1 }} aria-hidden="true" />
 
           {/* Cột 2: Bộ đếm ngược thời gian thực */}
           <div className="countdown-open__timer">
-            <div className="countdown-card__meta">
+            <div className="countdown-card__meta reveal-item" style={{ '--stagger': 1 }}>
               <span className="countdown-meta-item">
                 <CalendarIcon size={15} />
                 {GRADUATION_INFO.date}
@@ -80,7 +80,7 @@ export default function CountdownTimer() {
               </span>
             </div>
 
-            <div className="countdown-grid" role="timer" aria-live="off">
+            <div className="countdown-grid reveal-item" style={{ '--stagger': 2 }} role="timer" aria-live="off">
               <div className="countdown-box">
                 <div className="countdown-box__num">{formatNumber(timeLeft.days)}</div>
                 <div className="countdown-box__unit">Ngày</div>
@@ -105,7 +105,7 @@ export default function CountdownTimer() {
               </div>
             </div>
 
-            <p className="countdown-open__venue">
+            <p className="countdown-open__venue reveal-item" style={{ '--stagger': 3 }}>
               <span className="text-desktop">
                 Địa điểm: <strong>{GRADUATION_INFO.venue}</strong>
               </span>
@@ -113,7 +113,7 @@ export default function CountdownTimer() {
                 <strong>UIT • ĐHQG-HCM</strong>, Thủ Đức
               </span>
             </p>
-            <p className="countdown-open__note">
+            <p className="countdown-open__note reveal-item" style={{ '--stagger': 4 }}>
               <span className="text-desktop">
                 Đón khách &amp; chụp ảnh kỷ niệm: <strong>15:00 – 17:00</strong>
               </span>

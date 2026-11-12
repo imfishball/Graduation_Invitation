@@ -279,13 +279,13 @@ export default function Newsletter() {
   return (
     <section className="section wishes" id="contact" aria-labelledby="wishes-title">
       <div className="container wishes__container">
-        <div className="wishes__header reveal">
+        <div className="wishes__header reveal-group">
           <SectionHead
             tagline={NEWSLETTER.script}
             title={NEWSLETTER.title}
             id="wishes-title"
           />
-          <p className="wishes__subtitle">
+          <p className="wishes__subtitle reveal-item" style={{ '--stagger': 2 }}>
             {copy.isPersonalized ? (
               copy.newsletter.subtitle
             ) : (

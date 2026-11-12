@@ -8,35 +8,52 @@ export default function HotAirBalloonOrnament({ className = '' }) {
   const balloonRef = useRef(null)
 
   useEffect(() => {
+    const el = balloonRef.current
+    if (!el) return undefined
+
     let rafId = 0
     let ticking = false
+    let isNearViewport = false
+
+    const update = () => {
+      ticking = false
+      if (!isNearViewport) return
+      const rect = el.getBoundingClientRect()
+      const windowHeight = window.innerHeight
+      const progress = (windowHeight - rect.top) / (windowHeight + 300)
+      const clamped = Math.max(-0.5, Math.min(1.5, progress))
+
+      const tilt = (clamped - 0.5) * -14
+      const parallaxY = (clamped - 0.5) * -32
+      el.style.setProperty('--balloon-scroll-tilt', `${tilt}deg`)
+      el.style.setProperty('--balloon-scroll-y', `${parallaxY}px`)
+    }
 
     const handleScroll = () => {
-      if (!ticking) {
-        ticking = true
-        rafId = requestAnimationFrame(() => {
-          const el = balloonRef.current
-          if (el) {
-            const rect = el.getBoundingClientRect()
-            const windowHeight = window.innerHeight
-            const progress = (windowHeight - rect.top) / (windowHeight + 300)
-            const clamped = Math.max(-0.5, Math.min(1.5, progress))
+      if (!isNearViewport || ticking) return
+      ticking = true
+      rafId = requestAnimationFrame(update)
+    }
 
-            // Parallax nhấc bổng & nghiêng theo đà cuộn
-            const tilt = (clamped - 0.5) * -14 // -7deg đến +7deg
-            const parallaxY = (clamped - 0.5) * -32
-            el.style.setProperty('--balloon-scroll-tilt', `${tilt}deg`)
-            el.style.setProperty('--balloon-scroll-y', `${parallaxY}px`)
-          }
-          ticking = false
-        })
-      }
+    let observer = null
+    if ('IntersectionObserver' in window) {
+      observer = new IntersectionObserver(
+        (entries) => {
+          isNearViewport = Boolean(entries[0]?.isIntersecting)
+          if (isNearViewport) handleScroll()
+        },
+        { rootMargin: '250px 0px' }
+      )
+      observer.observe(el)
+    } else {
+      isNearViewport = true
+      handleScroll()
     }
 
     window.addEventListener('scroll', handleScroll, { passive: true })
-    handleScroll()
 
     return () => {
+      observer?.disconnect()
       window.removeEventListener('scroll', handleScroll)
       cancelAnimationFrame(rafId)
     }

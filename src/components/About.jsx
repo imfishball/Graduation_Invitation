@@ -69,13 +69,15 @@ export default function About() {
           <div className="ornament about__paw" aria-hidden="true" />
         </div>
 
-        <div className="about__text reveal">
-          <p className="about__tagline">{ABOUT.script}</p>
-          <h2 className="about__title" id="about-title">
+        <div className="about__text reveal-group">
+          <p className="about__tagline reveal-item" style={{ '--stagger': 0 }}>
+            {ABOUT.script}
+          </p>
+          <h2 className="about__title reveal-item" id="about-title" style={{ '--stagger': 1 }}>
             {copy.about.title}
           </h2>
 
-          <div className="about__body">
+          <div className="about__body reveal-item" style={{ '--stagger': 2 }}>
             {copy.about.paragraphs.map((paragraph, idx) => (
               <p key={idx}>{paragraph}</p>
             ))}
@@ -92,11 +94,11 @@ export default function About() {
       {/* 2. Điểm Đến Buổi Lễ & Hướng Dẫn Di Chuyển */}
       <div className="container ceremony-wrap" id="ceremony">
         {/* Điểm đến & Hướng dẫn di chuyển (Venue & Wayfinding) */}
-        <div className="ceremony-venue reveal" id="campus-map">
+        <div className="ceremony-venue reveal-group" id="campus-map">
           <div className="ceremony-venue__grid">
             {/* Cột trái: Thông tin địa điểm UIT, Lối đi, Phương tiện & CTAs */}
             <div className="venue-info">
-              <div className="venue-info__header">
+              <div className="venue-info__header reveal-item" style={{ '--stagger': 0 }}>
                 <p className="venue-info__eyebrow">điểm đến buổi lễ</p>
                 <h3 className="venue-info__hall">{GRADUATION_INFO.hall}</h3>
                 <p className="venue-info__univ">{GRADUATION_INFO.university}</p>
@@ -107,7 +109,7 @@ export default function About() {
               </div>
 
               {/* Lối vào & Gửi xe tinh gọn */}
-              <div className="venue-guide">
+              <div className="venue-guide reveal-item" style={{ '--stagger': 1 }}>
                 <div className="venue-guide__item">
                   <span className="venue-guide__dot" />
                   <div className="venue-guide__content">
@@ -131,7 +133,7 @@ export default function About() {
               </div>
 
               {/* Gợi ý phương tiện tinh gọn */}
-              <div className="venue-transit">
+              <div className="venue-transit reveal-item" style={{ '--stagger': 2 }}>
                 <div className="venue-transit__item">
                   <CarIcon size={15} />
                   <span><strong>Grab / Taxi:</strong> Ghim Cổng chính UIT</span>
@@ -143,7 +145,7 @@ export default function About() {
               </div>
 
               {/* Hàng nút hành động chuẩn design system */}
-              <div className="venue-actions">
+              <div className="venue-actions reveal-item" style={{ '--stagger': 3 }}>
                 <a
                   className="pill pill--rose"
                   href={GRADUATION_INFO.googleMapsUrl}
@@ -170,7 +172,7 @@ export default function About() {
             </div>
 
             {/* Cột phải: Visual Map & Legend */}
-            <div className="venue-map-card">
+            <div className="venue-map-card reveal-item" style={{ '--stagger': 2 }}>
               <div
                 className="campus-map-interactive"
                 onClick={() => setShowMapModal(true)}
