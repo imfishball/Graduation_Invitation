@@ -394,16 +394,25 @@ export default function WaterRipple({
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
       gl.bindTexture(gl.TEXTURE_2D, null)
       imgLoaded = true
+      lastActiveTime = performance.now()
       setIsReady(true)
+      syncRenderState()
     }
     img.src = imageSrc
 
     // Mouse tracking state: start inactive (-999, -999)
+    const IDLE_SLEEP_MS = 2800
     let mouseX = -999.0, mouseY = -999.0
     let prevMouseX = -999.0, prevMouseY = -999.0
     let isDown = 0.0
     let isHover = 0.0
     let lastTime = performance.now()
+    let lastActiveTime = performance.now()
+
+    const wakeLoop = () => {
+      lastActiveTime = performance.now()
+      syncRenderState()
+    }
 
     const updateCoords = (e) => {
       const rect = canvas.getBoundingClientRect()
@@ -411,19 +420,23 @@ export default function WaterRipple({
       mouseX = Math.max(0.0, Math.min(1.0, (e.clientX - rect.left) / rect.width))
       mouseY = Math.max(0.0, Math.min(1.0, 1.0 - (e.clientY - rect.top) / rect.height))
       isHover = 1.0
+      lastActiveTime = performance.now()
     }
 
     const onPointerMove = (e) => {
       updateCoords(e)
+      wakeLoop()
     }
 
     const onPointerDown = (e) => {
       updateCoords(e)
       isDown = 1.0
+      wakeLoop()
     }
 
     const onPointerUp = () => {
       isDown = 0.0
+      lastActiveTime = performance.now()
     }
 
     const onPointerLeave = () => {
@@ -433,6 +446,7 @@ export default function WaterRipple({
       mouseY = -999.0
       prevMouseX = -999.0
       prevMouseY = -999.0
+      lastActiveTime = performance.now()
     }
 
     // Listen on hero section and window
@@ -480,7 +494,11 @@ export default function WaterRipple({
       }
     }
 
-    window.addEventListener('resize', resize, { passive: true })
+    const onResize = () => {
+      resize()
+      wakeLoop()
+    }
+    window.addEventListener('resize', onResize, { passive: true })
     resize()
 
     function render(now) {
@@ -488,11 +506,21 @@ export default function WaterRipple({
         animId = 0
         return
       }
-      animId = requestAnimationFrame(render)
-      if (!imgLoaded) return
+      if (!imgLoaded) {
+        animId = requestAnimationFrame(render)
+        return
+      }
 
       const dt = Math.min((now - lastTime) / 1000, 0.05)
       lastTime = now
+
+      const hasPendingActivity =
+        isHover > 0.5 || isDown > 0.5 || now - lastActiveTime <= IDLE_SLEEP_MS
+      if (hasPendingActivity) {
+        animId = requestAnimationFrame(render)
+      } else {
+        animId = 0
+      }
 
       // Compute cursor velocity (units / sec)
       let velX = 0.0, velY = 0.0
@@ -589,14 +617,16 @@ export default function WaterRipple({
       gl.bindTexture(gl.TEXTURE_2D, null)
     }
 
-    const syncRenderState = () => {
+    function syncRenderState() {
       if (isDisposed) return
-      if (isHeroVisible && !document.hidden) {
+      const activeWindow =
+        isHover > 0.5 || isDown > 0.5 || performance.now() - lastActiveTime <= IDLE_SLEEP_MS
+      if (isHeroVisible && !document.hidden && (!imgLoaded || activeWindow)) {
         if (!animId) {
           lastTime = performance.now()
           animId = requestAnimationFrame(render)
         }
-      } else if (animId) {
+      } else if (animId && (!isHeroVisible || document.hidden)) {
         cancelAnimationFrame(animId)
         animId = 0
       }
@@ -608,7 +638,9 @@ export default function WaterRipple({
         (entries) => {
           const entry = entries[0]
           if (!entry) return
+          const becameVisible = !isHeroVisible && entry.isIntersecting
           isHeroVisible = entry.isIntersecting
+          if (becameVisible) lastActiveTime = performance.now()
           syncRenderState()
         },
         { rootMargin: '120px 0px', threshold: 0.01 }
@@ -616,7 +648,11 @@ export default function WaterRipple({
       visibilityObserver.observe(heroSection || canvas)
     }
 
-    document.addEventListener('visibilitychange', syncRenderState)
+    const handleVisibilityOrFocus = () => {
+      if (!document.hidden) wakeLoop()
+      else syncRenderState()
+    }
+    document.addEventListener('visibilitychange', handleVisibilityOrFocus)
     syncRenderState()
 
     return () => {
@@ -624,8 +660,8 @@ export default function WaterRipple({
       img.onload = null
       if (animId) cancelAnimationFrame(animId)
       visibilityObserver?.disconnect()
-      document.removeEventListener('visibilitychange', syncRenderState)
-      window.removeEventListener('resize', resize)
+      document.removeEventListener('visibilitychange', handleVisibilityOrFocus)
+      window.removeEventListener('resize', onResize)
       if (heroSection) {
         heroSection.removeEventListener('pointerenter', onPointerMove)
         heroSection.removeEventListener('pointermove', onPointerMove)

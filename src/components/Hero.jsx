@@ -1,15 +1,50 @@
-import { Fragment } from 'react'
+import { Fragment, useEffect, useRef, useState } from 'react'
 import { HERO } from '../data'
 import { useInvitation } from '../invitationContext'
 import WaterRipple from './WaterRipple'
 import RoseDivider from './RoseDivider'
-import { MapPinIcon } from './Icons'
+import { ChevronDownIcon, MapPinIcon } from './Icons'
 
-export default function Hero() {
+const HERO_MOTES = [
+  { left: '14%', bottom: '18%', size: '10px', dur: '11s', delay: '-1.5s', drift: '18px' },
+  { left: '28%', bottom: '12%', size: '7px', dur: '13s', delay: '-4.2s', drift: '-14px' },
+  { left: '46%', bottom: '20%', size: '12px', dur: '12s', delay: '-2.8s', drift: '22px' },
+  { left: '63%', bottom: '14%', size: '8px', dur: '10.5s', delay: '-6s', drift: '-16px' },
+  { left: '82%', bottom: '24%', size: '11px', dur: '14s', delay: '-3.1s', drift: '14px' },
+  { left: '22%', bottom: '36%', size: '6px', dur: '12.5s', delay: '-7.2s', drift: '12px' },
+  { left: '56%', bottom: '42%', size: '9px', dur: '11.5s', delay: '-5.1s', drift: '-18px' },
+  { left: '74%', bottom: '38%', size: '7px', dur: '13.5s', delay: '-8.4s', drift: '16px' },
+]
+
+export default function Hero({ entered = true }) {
   const { copy } = useInvitation()
+  const heroRef = useRef(null)
+  const [isOffscreen, setIsOffscreen] = useState(false)
+
+  useEffect(() => {
+    const el = heroRef.current
+    if (!el || !('IntersectionObserver' in window)) return undefined
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0]
+        if (!entry) return
+        setIsOffscreen(!entry.isIntersecting)
+      },
+      { rootMargin: '80px 0px', threshold: 0.01 }
+    )
+
+    observer.observe(el)
+    return () => observer.disconnect()
+  }, [])
 
   return (
-    <section className="hero on-dark" id="top" aria-labelledby="hero-title">
+    <section
+      ref={heroRef}
+      className={`hero on-dark ${entered ? 'hero--entered' : 'hero--waiting'}${isOffscreen ? ' hero--offscreen' : ''}`}
+      id="top"
+      aria-labelledby="hero-title"
+    >
       <div className="hero__media">
         <WaterRipple imageSrc="/assets/hero.webp" />
         <img
@@ -21,6 +56,24 @@ export default function Hero() {
         />
       </div>
       <div className="hero__scrim" />
+
+      <div className="hero__ambient" aria-hidden="true">
+        <span className="hero__sunbeam" />
+        {HERO_MOTES.map((mote, i) => (
+          <span
+            key={i}
+            className="hero__mote"
+            style={{
+              '--mote-left': mote.left,
+              '--mote-bottom': mote.bottom,
+              '--mote-size': mote.size,
+              '--mote-dur': mote.dur,
+              '--mote-delay': mote.delay,
+              '--mote-drift': mote.drift,
+            }}
+          />
+        ))}
+      </div>
 
       <div className="container hero__inner">
         <div className="hero__spacer" />
@@ -111,6 +164,13 @@ export default function Hero() {
           </div>
         </div>
       </div>
+
+      <a className="hero__scroll-cue" href="#countdown" aria-label="Cuộn xuống xem lịch lễ tốt nghiệp">
+        <span className="hero__scroll-cue-text">Cuộn xuống</span>
+        <span className="hero__scroll-cue-icon" aria-hidden="true">
+          <ChevronDownIcon size={14} />
+        </span>
+      </a>
     </section>
   )
 }

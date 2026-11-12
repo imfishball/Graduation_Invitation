@@ -127,7 +127,7 @@ function AppContent() {
         <Header activeId={activeId} solid={headerSolid} />
 
         <main id="main">
-          <Hero />
+          <Hero entered={coverState !== 'open'} />
           <CountdownTimer />
           <About />
           <Newsletter />
