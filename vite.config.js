@@ -1,21 +1,27 @@
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import hostAuthHandler from './api/host-auth.js'
+import notesHandler from './api/notes.js'
 
-function hostAuthServerPlugin() {
-  const mountMiddleware = (middlewares) => {
-    middlewares.use('/api/host-auth', (req, res, next) => {
+function localApiServerPlugin() {
+  const mountHandler = (middlewares, routePath, handler) => {
+    middlewares.use(routePath, (req, res, next) => {
       const urlPath = (req.url || '').split('?')[0]
       if (urlPath && urlPath !== '/') {
         next()
         return
       }
-      Promise.resolve(hostAuthHandler(req, res)).catch(next)
+      Promise.resolve(handler(req, res)).catch(next)
     })
   }
 
+  const mountMiddleware = (middlewares) => {
+    mountHandler(middlewares, '/api/host-auth', hostAuthHandler)
+    mountHandler(middlewares, '/api/notes', notesHandler)
+  }
+
   return {
-    name: 'local-host-auth-api',
+    name: 'local-api-server',
     configureServer(server) {
       mountMiddleware(server.middlewares)
     },
@@ -27,15 +33,24 @@ function hostAuthServerPlugin() {
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
-  if (!process.env.HOST_PASSWORD && env.HOST_PASSWORD) {
-    process.env.HOST_PASSWORD = env.HOST_PASSWORD
-  }
-  if (!process.env.HOST_AUTH_SECRET && env.HOST_AUTH_SECRET) {
-    process.env.HOST_AUTH_SECRET = env.HOST_AUTH_SECRET
+  const passthroughKeys = [
+    'HOST_PASSWORD',
+    'HOST_AUTH_SECRET',
+    'KV_REST_API_URL',
+    'KV_REST_API_TOKEN',
+    'UPSTASH_REDIS_REST_URL',
+    'UPSTASH_REDIS_REST_TOKEN',
+    'NOTES_GIST_ID',
+    'GITHUB_TOKEN',
+  ]
+  for (const key of passthroughKeys) {
+    if (!process.env[key] && env[key]) {
+      process.env[key] = env[key]
+    }
   }
 
   return {
-    plugins: [react(), hostAuthServerPlugin()],
+    plugins: [react(), localApiServerPlugin()],
     server: {
       port: 5173,
       host: true,

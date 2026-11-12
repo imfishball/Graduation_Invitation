@@ -1,0 +1,46 @@
+﻿[
+  {
+    "id": "msg-1",
+    "name": "Bố Mẹ & Gia Đình",
+    "role": "Gia đình",
+    "attendance": "attending",
+    "noteColor": "rose",
+    "fastener": "tape-stripe",
+    "doodle": "star",
+    "message": "Bố Mẹ rất tự hào về con gái! Chúc con vững bước chặng đường mới, cả nhà luôn bên con.",
+    "time": "Hôm qua lúc 18:30"
+  },
+  {
+    "id": "msg-2",
+    "name": "Nhóm Bạn Lab 402",
+    "role": "Bạn thân UIT K17",
+    "attendance": "attending",
+    "noteColor": "butter",
+    "fastener": "tape-dots",
+    "doodle": "heart",
+    "message": "Chúc mừng tốt nghiệp nha Mai! Thứ Sáu 27/11 đúng 15h00 tụi tao ôm hoa tới UIT chụp ảnh nha!",
+    "time": "Hôm qua lúc 20:15"
+  },
+  {
+    "id": "msg-3",
+    "name": "Thầy Cố vấn Học tập",
+    "role": "Giảng viên UIT",
+    "attendance": "attending",
+    "noteColor": "mint",
+    "fastener": "pushpin",
+    "doodle": "flower",
+    "message": "Chúc mừng tân cử nhân Xuân Mai! Chúc em luôn giữ tinh thần ham học hỏi và vươn xa hơn nữa.",
+    "time": "Hôm nay lúc 08:45"
+  },
+  {
+    "id": "msg-4",
+    "name": "Hoàng Quân K17",
+    "role": "Bạn cùng khóa UIT",
+    "attendance": "attending",
+    "noteColor": "sky",
+    "fastener": "tape-grid",
+    "doodle": "sparkle",
+    "message": "Chúc Mai tốt nghiệp thật rực rỡ và nhiều niềm vui! Hẹn gặp bạn chiều 27/11 ở sân trường UIT nhé.",
+    "time": "Hôm nay lúc 10:15"
+  }
+]

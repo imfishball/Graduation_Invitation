@@ -15,11 +15,30 @@ import {
 } from './Icons'
 import SectionHead from './SectionHead'
 
-const STORAGE_KEY = 'graduation_guestbook_messages_v6'
+const LOCAL_FALLBACK_KEY = 'graduation_guestbook_local_only_v1'
 const LIKES_STORAGE_KEY = 'graduation_guestbook_likes_v1'
 const NOTE_TILTS = ['-1.1deg', '0.9deg', '-0.7deg', '1deg']
 const FASTENERS = ['tape-stripe', 'tape-dots', 'pushpin', 'tape-grid']
 const DOODLES = ['star', 'heart', 'flower', 'sparkle']
+
+function readLocalFallbackNotes() {
+  try {
+    const saved = localStorage.getItem(LOCAL_FALLBACK_KEY)
+    if (!saved) return []
+    const parsed = JSON.parse(saved)
+    return Array.isArray(parsed) ? parsed : []
+  } catch {
+    return []
+  }
+}
+
+function saveLocalFallbackNotes(notes) {
+  try {
+    localStorage.setItem(LOCAL_FALLBACK_KEY, JSON.stringify(notes))
+  } catch {
+    // Bỏ qua nếu trình duyệt chặn localStorage
+  }
+}
 
 export default function Newsletter() {
   const { copy } = useInvitation()
@@ -33,7 +52,10 @@ export default function Newsletter() {
   const [message, setMessage] = useState('')
   const [status, setStatus] = useState('idle') // idle | submitting | success | error
   const [errorMsg, setErrorMsg] = useState('')
-  const [guestbook, setGuestbook] = useState(INITIAL_GUESTBOOK)
+  const [guestbook, setGuestbook] = useState(() => {
+    const localOnly = readLocalFallbackNotes()
+    return localOnly.length > 0 ? [...localOnly, ...INITIAL_GUESTBOOK] : INITIAL_GUESTBOOK
+  })
   const [newestId, setNewestId] = useState(null)
   const [selectedNote, setSelectedNote] = useState(null)
   const [likedIds, setLikedIds] = useState(() => {
@@ -45,20 +67,43 @@ export default function Newsletter() {
     }
   })
 
-  // Tải bảng giấy note từ localStorage
+  // Tải bảng giấy note dùng chung từ file JSON qua /api/notes
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY)
-      if (saved !== null) {
-        const parsed = JSON.parse(saved)
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          setGuestbook(parsed)
-          return
+    let active = true
+
+    const fetchNotes = async () => {
+      try {
+        const res = await fetch('/api/notes', { cache: 'no-store' })
+        if (!res.ok) return
+        const data = await res.json()
+        if (!active || !data?.ok || !Array.isArray(data.notes)) return
+
+        const serverNotes = data.notes
+        if (data.shared === false) {
+          const localOnly = readLocalFallbackNotes()
+          const serverIds = new Set(serverNotes.map((item) => item.id))
+          const extraLocal = localOnly.filter((item) => item && !serverIds.has(item.id))
+          setGuestbook([...extraLocal, ...serverNotes])
+        } else {
+          setGuestbook(serverNotes.length > 0 ? serverNotes : INITIAL_GUESTBOOK)
         }
+      } catch {
+        // Giữ dữ liệu mặc định + local fallback nếu tạm mất kết nối
       }
-      setGuestbook(INITIAL_GUESTBOOK)
-    } catch {
-      setGuestbook(INITIAL_GUESTBOOK)
+    }
+
+    fetchNotes()
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchNotes()
+      }
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      active = false
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
     }
   }, [])
 
@@ -83,15 +128,6 @@ export default function Newsletter() {
       window.removeEventListener('keydown', handleKeyDown)
     }
   }, [selectedNote])
-
-  const saveGuestbook = (list) => {
-    setGuestbook(list)
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(list))
-    } catch {
-      // Bỏ qua nếu trình duyệt chặn localStorage
-    }
-  }
 
   const triggerConfetti = () => {
     const colors = ['#d68b96', '#f5ede1', '#e8b4b8', '#d3ebd7', '#ffd166', '#d4e5f7']
@@ -121,7 +157,7 @@ export default function Newsletter() {
     }, 220)
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
     const cleanName = name.trim()
     const cleanMsg = message.trim()
@@ -143,25 +179,65 @@ export default function Newsletter() {
     setStatus('submitting')
     setErrorMsg('')
 
-    setTimeout(() => {
-      const id = 'msg-' + Date.now()
-      let authorName
-      let displayRole
+    let authorName
+    let displayRole
 
-      if (showIdentityFields) {
-        authorName = cleanName
-        const resolvedRole = role === 'Khác' ? customRole.trim() || 'Khác' : role
-        displayRole = attendance === 'remote' ? `${resolvedRole} · Gửi từ xa` : resolvedRole
-      } else {
-        authorName = copy.rawName ? copy.callName : copy.newsletter.defaultAuthor || 'Khách mời'
-        displayRole = copy.newsletter.noteTag
-          ? `${copy.newsletter.noteTag} · ${attendance === 'remote' ? 'Gửi từ xa' : 'Tham dự'}`
-          : attendance === 'remote'
-            ? 'Gửi lời chúc từ xa'
-            : 'Tham dự buổi lễ'
+    if (showIdentityFields) {
+      authorName = cleanName
+      const resolvedRole = role === 'Khác' ? customRole.trim() || 'Khác' : role
+      displayRole = attendance === 'remote' ? `${resolvedRole} · Gửi từ xa` : resolvedRole
+    } else {
+      authorName = copy.rawName ? copy.callName : copy.newsletter.defaultAuthor || 'Khách mời'
+      displayRole = copy.newsletter.noteTag
+        ? `${copy.newsletter.noteTag} · ${attendance === 'remote' ? 'Gửi từ xa' : 'Tham dự'}`
+        : attendance === 'remote'
+          ? 'Gửi lời chúc từ xa'
+          : 'Tham dự buổi lễ'
+    }
+
+    try {
+      const res = await fetch('/api/notes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: authorName,
+          role: displayRole,
+          attendance,
+          noteColor,
+          message: cleanMsg,
+        }),
+      })
+
+      const data = await res.json().catch(() => null)
+      if (!res.ok || !data?.ok || !data.note) {
+        setStatus('error')
+        setErrorMsg(data?.error || 'Không thể dán note lúc này, bạn thử lại giúp Mai nhé.')
+        return
       }
 
-      const newEntry = {
+      if (data.shared === false) {
+        const nextLocalOnly = [data.note, ...readLocalFallbackNotes()]
+        saveLocalFallbackNotes(nextLocalOnly)
+      }
+
+      if (Array.isArray(data.notes) && data.notes.length > 0) {
+        setGuestbook(data.notes)
+      } else {
+        setGuestbook((prev) => [data.note, ...prev])
+      }
+      setNewestId(data.note.id)
+
+      triggerConfetti()
+      setStatus('success')
+      setMessage('')
+      if (showIdentityFields) {
+        setName('')
+        setRole(NEWSLETTER.roles[0])
+        setCustomRole('')
+      }
+    } catch {
+      const id = 'msg-' + Date.now()
+      const fallbackEntry = {
         id,
         name: authorName,
         role: displayRole,
@@ -172,9 +248,9 @@ export default function Newsletter() {
         message: cleanMsg,
         time: 'Vừa dán',
       }
-
-      const updated = [newEntry, ...guestbook]
-      saveGuestbook(updated)
+      const nextLocalOnly = [fallbackEntry, ...readLocalFallbackNotes()]
+      saveLocalFallbackNotes(nextLocalOnly)
+      setGuestbook((prev) => [fallbackEntry, ...prev])
       setNewestId(id)
 
       triggerConfetti()
@@ -185,7 +261,7 @@ export default function Newsletter() {
         setRole(NEWSLETTER.roles[0])
         setCustomRole('')
       }
-    }, 320)
+    }
   }
 
   const toggleLike = (id) => {

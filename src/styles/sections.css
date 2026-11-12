@@ -3425,13 +3425,62 @@ body.is-locked .mobile-bottom-bar {
   color: var(--muted);
 }
 
-@media (max-width: 1120px) {
+@media (min-width: 960px) {
+  .minimal-journal {
+    max-width: 1000px;
+  }
+
+  .minimal-journal__grid {
+    grid-template-columns: 380px minmax(0, 1fr);
+  }
+
+  .minimal-journal__col {
+    padding: 34px 28px 28px;
+  }
+
+  .notes-board__scroll {
+    padding: 18px 14px;
+    max-height: 526px;
+  }
+
+  .notes-grid {
+    grid-template-columns: repeat(2, minmax(0, 230px));
+    justify-content: center;
+    gap: 20px;
+  }
+
+  .sticky-note {
+    padding: 18px 15px 11px;
+    gap: 8px;
+  }
+
+  .sticky-note__msg {
+    font-size: 13px;
+    line-height: 1.54;
+    padding-right: 14px;
+    -webkit-line-clamp: 5;
+  }
+
+  .sticky-note__foot {
+    padding-top: 8px;
+  }
+
+  .minimal-wish__name {
+    font-size: 12.5px;
+  }
+
+  .minimal-wish__role {
+    font-size: 9.5px;
+  }
+}
+
+@media (max-width: 1120px) and (min-width: 860px) {
   .minimal-journal__grid {
     grid-template-columns: 356px minmax(0, 1fr);
   }
 
   .minimal-journal__col {
-    padding: 38px 24px 30px;
+    padding: 34px 24px 28px;
   }
 }
 
