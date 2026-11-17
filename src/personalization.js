@@ -434,6 +434,20 @@ export function buildPersonalizedCopy(invite) {
   }
 }
 
+const ABOUT_TITLE_DEFAULT = 'Đôi Dòng Tâm Sự'
+const ABOUT_FIRST_PARAGRAPH =
+  'Bốn năm đại học tại UIT đã chính thức khép lại. Để có được cột mốc hôm nay là nhờ sự hy sinh thầm lặng của Bố Mẹ, sự dìu dắt tận tâm của Thầy Cô và sự sẻ chia ấm áp của bạn bè.'
+
+function buildAboutCopy(guestCall, selfCall) {
+  return {
+    title: ABOUT_TITLE_DEFAULT,
+    paragraphs: [
+      ABOUT_FIRST_PARAGRAPH,
+      `Sự hiện diện hay dù chỉ là một lời chúc từ phương xa của ${guestCall} đều là món quà vô giá đối với ${selfCall}. Cảm ơn vì đã luôn là một phần thanh xuân tuyệt vời của ${selfCall}!`,
+    ],
+  }
+}
+
 function buildBaseCopy({
   presetId,
   presetMeta,
@@ -462,13 +476,7 @@ function buildBaseCopy({
         description: `Thanh xuân tại UIT sắp khép lại, mở ra một hành trình mới. Mong được đón ${midCall} đến chung vui và lưu giữ khoảnh khắc đáng nhớ này cùng em.`,
       },
       countdownPillPrefix: 'Trân trọng kính mời',
-      about: {
-        title: hasExplicitName ? `Đôi dòng gửi ${callName}` : 'Đôi dòng gửi anh',
-        paragraphs: [
-          'Bốn năm đại học tại UIT đã chính thức khép lại. Để có được cột mốc hôm nay là nhờ sự hy sinh thầm lặng của Bố Mẹ, sự dìu dắt tận tâm của Thầy Cô và sự nâng đỡ ấm áp của những người anh đi trước, bạn bè xung quanh.',
-          `Sự hiện diện hay dù chỉ là một lời chúc từ ${midCall} đều là món quà vô giá đối với em. Cảm ơn ${midLower} đã luôn động viên và dõi theo hành trình trưởng thành của em Mai!`,
-        ],
-      },
+      about: buildAboutCopy(midCall, 'em'),
       newsletter: {
         subtitle: `Hãy viết đôi dòng lên tờ giấy note gửi em Mai — sự hiện diện hay lời chúc của ${midCall} đều là kỷ niệm Mai sẽ trân trọng giữ mãi.`,
         attendanceLabel: `${hasExplicitName ? callName : 'Anh'} có tham dự buổi lễ cùng em không?`,
@@ -505,13 +513,7 @@ function buildBaseCopy({
         description: `Thanh xuân tại UIT sắp khép lại, mở ra một hành trình mới. Mong được đón ${midCall} đến chung vui và lưu giữ khoảnh khắc đáng nhớ này cùng em.`,
       },
       countdownPillPrefix: 'Trân trọng kính mời',
-      about: {
-        title: hasExplicitName ? `Đôi dòng gửi ${callName}` : 'Đôi dòng gửi chị',
-        paragraphs: [
-          'Bốn năm đại học tại UIT đã chính thức khép lại. Để có được cột mốc hôm nay là nhờ sự hy sinh thầm lặng của Bố Mẹ, sự dìu dắt tận tâm của Thầy Cô và tình cảm quý mến từ những người chị đi trước, bạn bè xung quanh.',
-          `Sự hiện diện hay dù chỉ là một lời chúc từ ${midCall} đều là món quà vô giá đối với em. Cảm ơn ${midLower} đã luôn động viên và là một phần thanh xuân thật đẹp của em Mai!`,
-        ],
-      },
+      about: buildAboutCopy(midCall, 'em'),
       newsletter: {
         subtitle: `Hãy viết đôi dòng lên tờ giấy note gửi em Mai — sự hiện diện hay lời chúc của ${midCall} đều là kỷ niệm Mai sẽ trân trọng giữ mãi.`,
         attendanceLabel: `${hasExplicitName ? callName : 'Chị'} có tham dự buổi lễ cùng em không?`,
@@ -547,13 +549,7 @@ function buildBaseCopy({
         description: `Thanh xuân tại UIT sắp khép lại, mở ra một hành trình mới. Mong được cùng ${midCall} lưu giữ khoảnh khắc thật đáng nhớ này nhé.`,
       },
       countdownPillPrefix: 'Trân trọng kính mời',
-      about: {
-        title: hasExplicitName ? `Đôi dòng gửi ${callName}` : 'Đôi dòng gửi em',
-        paragraphs: [
-          'Bốn năm đại học tại UIT của chị đã chính thức khép lại. Để có được cột mốc hôm nay là nhờ sự hy sinh thầm lặng của Bố Mẹ, sự dìu dắt tận tâm của Thầy Cô và niềm vui bên cạnh gia đình, bạn bè, các em thân thương.',
-          `Chiều 27/11 nếu rảnh thì qua UIT chụp ảnh với chị nha! Sự hiện diện hay lời chúc từ ${midCall} đều là món quà rất ý nghĩa đối với chị Mai.`,
-        ],
-      },
+      about: buildAboutCopy(midCall, 'chị'),
       newsletter: {
         subtitle: `Viết đôi dòng lên một tờ giấy note gửi chị Mai nhé — từng lời chúc hay cái hẹn chiều 27/11 của ${midCall} chị đều trân quý giữ mãi.`,
         attendanceLabel: `${hasExplicitName ? callName : 'Em'} có tham dự buổi lễ cùng chị không?`,
@@ -590,13 +586,7 @@ function buildBaseCopy({
         description: `Bốn năm dưới mái trường UIT sắp khép lại, mở ra một hành trình mới. Em rất mong được đón ${midCall} đến chung vui và lưu giữ cùng em khoảnh khắc đáng nhớ này.`,
       },
       countdownPillPrefix: 'Kính mời',
-      about: {
-        title: hasExplicitName ? `Đôi dòng kính gửi ${callName}` : `Đôi dòng kính gửi ${titleWord}`,
-        paragraphs: [
-          `Bốn năm học tập và trưởng thành tại UIT đã chính thức khép lại. Để có được cột mốc tốt nghiệp hôm nay, em luôn khắc ghi công ơn dạy dỗ, sự dìu dắt tận tâm và những bài học quý giá từ ${midCall} cũng như quý Thầy Cô trong suốt thời gian qua.`,
-          `Sự hiện diện hay dù chỉ là một lời chúc từ ${midCall} đều là niềm vinh dự và món quà tinh thần vô giá đối với em. Em kính chúc ${titleWord} luôn thật nhiều sức khỏe và niềm vui trên bục giảng.`,
-        ],
-      },
+      about: buildAboutCopy(midCall, 'em'),
       newsletter: {
         subtitle: `Kính mong ${midCall} để lại đôi dòng lưu bút lên bảng kỷ niệm — từng lời nhắn gửi của ${titleWord} là hành trang quý báu em Mai sẽ mang theo mãi.`,
         attendanceLabel: `Kính hỏi ${midCall} có tham dự buổi lễ không ạ?`,
@@ -632,13 +622,7 @@ function buildBaseCopy({
         description: `Bốn năm đại học tại UIT sắp khép lại, mở ra một chặng đường mới. Khoảnh khắc tốt nghiệp này sẽ chẳng thể trọn vẹn nếu thiếu ${midCall} ở bên.`,
       },
       countdownPillPrefix: 'Con kính mời',
-      about: {
-        title: `Đôi dòng con gửi ${midCall}`,
-        paragraphs: [
-          `Bốn năm đại học tại UIT đã chính thức khép lại. Để con có được tấm bằng cử nhân và đứng tại cột mốc hôm nay, phía sau luôn là sự hy sinh thầm lặng, tình yêu thương vô bờ bến và niềm tin tuyệt đối mà ${midCall} đã dành trọn cho con.`,
-          `Cảm ơn ${midCall} đã luôn là điểm tựa bình yên nhất. Niềm tự hào và nụ cười rạng rỡ của ${midCall} trong chiều 27/11 chính là món quà tốt nghiệp lớn nhất cuộc đời con!`,
-        ],
-      },
+      about: buildAboutCopy(midCall, 'con'),
       newsletter: {
         subtitle: `Nếu muốn nhắn nhủ đôi lời cho con gái trước chặng đường mới, ${midCall} cứ viết lên tờ giấy note nhỏ này nhé — con sẽ đọc và giữ mãi.`,
         attendanceLabel: `${midCall} có tham dự buổi lễ cùng con không?`,
@@ -674,13 +658,7 @@ function buildBaseCopy({
         description: `Bốn năm đại học tại UIT sắp khép lại, mở ra một hành trình mới. Cháu rất mong được đón ${midCall} đến chung vui và chụp ảnh kỷ niệm cùng cháu.`,
       },
       countdownPillPrefix: 'Cháu kính mời',
-      about: {
-        title: hasExplicitName ? `Đôi dòng cháu gửi ${callName}` : 'Đôi dòng cháu gửi gia đình',
-        paragraphs: [
-          `Bốn năm đại học tại UIT của cháu đã chính thức khép lại. Để cháu có được cột mốc trưởng thành hôm nay là nhờ tình yêu thương, sự động viên và quan tâm ấm áp của Bố Mẹ, Thầy Cô và sự nâng đỡ từ ${midCall}.`,
-          `Sự hiện diện hay những lời chúc từ phương xa của ${midCall} đều là món quà tinh thần vô giá đối với cháu. Cháu cảm ơn ${midCall} rất nhiều vì đã luôn dõi theo cháu!`,
-        ],
-      },
+      about: buildAboutCopy(midCall, 'cháu'),
       newsletter: {
         subtitle: `Kính mời ${midCall} viết đôi dòng lên tờ giấy note và dán lên bảng kỷ niệm — từng lời chúc của người thân đều là niềm hạnh phúc lớn cháu sẽ giữ mãi.`,
         attendanceLabel: `${hasExplicitName ? callName : 'Gia đình'} có tham dự buổi lễ cùng cháu không?`,
@@ -716,13 +694,7 @@ function buildBaseCopy({
         description: `Sau bốn năm cày deadline ở UIT cuối cùng tụi mình cũng sắp tốt nghiệp rồi! Hẹn ${midCall} qua chụp thật nhiều ảnh kỷ niệm với Mai nhé.`,
       },
       countdownPillPrefix: 'Hẹn gặp',
-      about: {
-        title: hasExplicitName ? `Đôi dòng gửi ${callName}` : 'Đôi dòng gửi hội bạn thân',
-        paragraphs: [
-          `Cuối cùng thì hành trình bốn năm ở UIT cũng sắp chạm vạch đích rồi! Cảm ơn ${midCall} vì đã đồng hành cùng Mai qua biết bao mùa thi, chạy đồ án và cả những buổi nói chuyện xuyên trưa.`,
-          `Chiều 27/11 nhất định phải có mặt ở UIT ôm hoa chụp ảnh với Mai đó nha — thiếu ${midCall} là bộ ảnh tốt nghiệp mất hẳn một mảnh ghép quý giá luôn!`,
-        ],
-      },
+      about: buildAboutCopy(midCall, 'Mai'),
       newsletter: {
         subtitle: `Viết vài dòng tâm tình hoặc chốt kèo giờ qua UIT lên tờ giấy note nha ${midCall} — mai mốt xem lại chắc chắn sẽ cười rạng rỡ lắm đây!`,
         attendanceLabel: `${hasExplicitName ? callName : 'Bạn'} có tham dự buổi lễ cùng Mai chứ?`,
@@ -758,13 +730,7 @@ function buildBaseCopy({
         description: `Thanh xuân tại UIT sắp khép lại, mở ra một hành trình mới. Mong được cùng ${midCall} lưu giữ khoảnh khắc đáng nhớ này.`,
       },
       countdownPillPrefix: 'Trân trọng kính mời',
-      about: {
-        title: hasExplicitName ? `Đôi dòng gửi ${callName}` : 'Đôi Dòng Tâm Sự',
-        paragraphs: [
-          'Bốn năm đại học tại UIT đã chính thức khép lại. Để có được cột mốc hôm nay là nhờ sự hy sinh thầm lặng của Bố Mẹ, sự dìu dắt tận tâm của Thầy Cô và sự sẻ chia ấm áp của bạn bè.',
-          `Sự hiện diện hay dù chỉ là một lời chúc từ ${midCall} đều là món quà vô giá đối với Mai. Cảm ơn vì đã luôn là một phần thanh xuân tuyệt vời của mình!`,
-        ],
-      },
+      about: buildAboutCopy(midCall, 'Mai'),
       newsletter: {
         subtitle: `Hãy viết đôi dòng lên một tờ giấy note và dán lên bảng kỷ niệm — từng lời chúc hay cái hẹn chiều 27/11 của ${midCall} đều là mảnh ghép Mai sẽ giữ mãi.`,
         attendanceLabel: `${hasExplicitName ? callName : 'Bạn'} có tham dự buổi lễ cùng Mai không?`,
@@ -800,13 +766,7 @@ function buildBaseCopy({
         'Thanh xuân tại UIT sắp khép lại, mở ra một hành trình mới. Mong được cùng mọi người lưu giữ khoảnh khắc đáng nhớ này.',
     },
     countdownPillPrefix: 'Trân trọng kính mời',
-    about: {
-      title: 'Đôi Dòng Tâm Sự',
-      paragraphs: [
-        'Bốn năm đại học tại UIT đã chính thức khép lại. Để có được cột mốc hôm nay là nhờ sự hy sinh thầm lặng của Bố Mẹ, sự dìu dắt tận tâm của Thầy Cô và sự sẻ chia ấm áp của bạn bè.',
-        'Sự hiện diện hay dù chỉ là một lời chúc từ phương xa của bạn đều là món quà vô giá đối với Mai. Cảm ơn vì đã luôn là một phần thanh xuân tuyệt vời của Mai!',
-      ],
-    },
+    about: buildAboutCopy(hasExplicitName ? callName : 'bạn', 'Mai'),
     newsletter: {
       subtitle:
         'Hãy viết đôi dòng lên một tờ giấy note và dán lên bảng kỷ niệm — từng lời chúc hay cái hẹn chiều 27/11 đều là mảnh ghép thanh xuân Mai sẽ giữ mãi.',
