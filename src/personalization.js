@@ -436,7 +436,7 @@ export function buildPersonalizedCopy(invite) {
 
 const ABOUT_TITLE_DEFAULT = 'Đôi Dòng Tâm Sự'
 const ABOUT_FIRST_PARAGRAPH =
-  'Bốn năm đại học tại UIT đã chính thức khép lại. Để có được cột mốc hôm nay là nhờ sự hy sinh thầm lặng của Bố Mẹ, sự dìu dắt tận tâm của Thầy Cô và sự sẻ chia ấm áp của bạn bè.'
+  'Bốn năm đại học tại UIT đã chính thức khép lại. Để có được cột mốc hôm nay là nhờ sự hy sinh thầm lặng của Bố Mẹ, sự dìu dắt tận tâm của Thầy Cô và sự chia sẻ ấm áp của gia đình và bạn bè.'
 
 function buildAboutCopy(guestCall, selfCall) {
   return {
