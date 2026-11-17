@@ -15,7 +15,7 @@ export default function About() {
           <figure className="about__frame">
             <img
               className="about__photo"
-              src="/assets/about-mai.jpg?v=2"
+              src="/assets/about-mai.jpg?v=3"
               alt="Nguyễn Vũ Xuân Mai duyên dáng trong lễ phục cử nhân UIT, đội mũ tốt nghiệp và dải băng tốt nghiệp UIT"
               width="1200"
               height="1283"
