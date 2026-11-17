@@ -241,12 +241,14 @@ export function sanitizeOverrides(raw) {
   const heroDesc = sanitizeField(raw.heroDesc, 320)
   const aboutTitle = sanitizeField(raw.aboutTitle, 80)
   const aboutPara = sanitizeField(raw.aboutPara, 420)
+  const newsletterSub = sanitizeField(raw.newsletterSub, 360)
 
   if (coverText) out.coverText = coverText
   if (heroTitle) out.heroTitle = heroTitle
   if (heroDesc) out.heroDesc = heroDesc
   if (aboutTitle) out.aboutTitle = aboutTitle
   if (aboutPara) out.aboutPara = aboutPara
+  if (newsletterSub) out.newsletterSub = newsletterSub
   return out
 }
 
@@ -277,6 +279,7 @@ export function encodeInviteToken({
   if (cleanOverrides.heroDesc) compactOverrides.d = cleanOverrides.heroDesc
   if (cleanOverrides.aboutTitle) compactOverrides.a = cleanOverrides.aboutTitle
   if (cleanOverrides.aboutPara) compactOverrides.p = cleanOverrides.aboutPara
+  if (cleanOverrides.newsletterSub) compactOverrides.n = cleanOverrides.newsletterSub
 
   const hasOverrides = Object.keys(compactOverrides).length > 0
   const payload = hasOverrides
@@ -331,6 +334,7 @@ export function decodeInviteToken(token) {
         heroDesc: rawMap.d,
         aboutTitle: rawMap.a,
         aboutPara: rawMap.p,
+        newsletterSub: rawMap.n,
       })
       return {
         preset,
@@ -386,6 +390,7 @@ export function buildPersonalizedCopy(invite) {
   const defaultHeroDesc = base.hero.description
   const defaultAboutTitle = base.about.title
   const defaultAboutPara = base.about.paragraphs[1]
+  const defaultNewsletterSub = base.newsletter.subtitle
 
   const finalCoverText = cleanOverrides.coverText || defaultCoverText
   const finalHeroTitle = cleanOverrides.heroTitle || defaultHeroTitle
@@ -395,6 +400,7 @@ export function buildPersonalizedCopy(invite) {
   const finalHeroDesc = cleanOverrides.heroDesc || defaultHeroDesc
   const finalAboutTitle = cleanOverrides.aboutTitle || defaultAboutTitle
   const finalAboutPara = cleanOverrides.aboutPara || defaultAboutPara
+  const finalNewsletterSub = cleanOverrides.newsletterSub || defaultNewsletterSub
 
   return {
     ...base,
@@ -406,6 +412,7 @@ export function buildPersonalizedCopy(invite) {
       heroDesc: defaultHeroDesc,
       aboutTitle: defaultAboutTitle,
       aboutPara: defaultAboutPara,
+      newsletterSub: defaultNewsletterSub,
     },
     cover: {
       ...base.cover,
@@ -431,8 +438,18 @@ export function buildPersonalizedCopy(invite) {
       title: finalAboutTitle,
       paragraphs: [base.about.paragraphs[0], finalAboutPara],
     },
+    newsletter: {
+      ...base.newsletter,
+      subtitle: finalNewsletterSub,
+    },
+    footer: {
+      message: DEFAULT_FOOTER_MESSAGE,
+    },
   }
 }
+
+const DEFAULT_FOOTER_MESSAGE =
+  'Bốn năm đại học là hành trình của tri thức, của những nỗ lực không ngừng và của biết bao yêu thương nâng đỡ. Xuân Mai xin gửi lời cảm ơn chân thành nhất đến gia đình, thầy cô và bạn bè — những người đã luôn ở bên, và xin cảm ơn mọi người đã dành thời gian đến chung vui, để ngày tốt nghiệp này trở nên trọn vẹn và đáng nhớ hơn bao giờ hết.'
 
 const ABOUT_TITLE_DEFAULT = 'Đôi Dòng Tâm Sự'
 const ABOUT_FIRST_PARAGRAPH =

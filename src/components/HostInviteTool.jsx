@@ -731,6 +731,7 @@ function HostStudioWorkspace({ onLockSession }) {
   const coverEdited = Boolean(cleanOverrides.coverText)
   const heroEdited = Boolean(cleanOverrides.heroTitle || cleanOverrides.heroDesc)
   const aboutEdited = Boolean(cleanOverrides.aboutTitle || cleanOverrides.aboutPara)
+  const newsletterEdited = Boolean(cleanOverrides.newsletterSub)
 
   return (
     <div
@@ -1087,6 +1088,38 @@ function HostStudioWorkspace({ onLockSession }) {
                     handleInlineChange('aboutPara', e.target.value, draftCopy.defaults.aboutPara)
                   }
                   onBlur={() => handleInlineBlur('aboutPara')}
+                />
+              </div>
+
+              <div className="host-preview-line">
+                <div className="host-preview-line__head">
+                  <span className="host-preview-line__tag">Bảng lưu bút &amp; lời chúc</span>
+                  {newsletterEdited && (
+                    <button
+                      type="button"
+                      className="host-preview-line__reset"
+                      onClick={() => resetOverrideKeys(['newsletterSub'])}
+                    >
+                      Đặt lại
+                    </button>
+                  )}
+                </div>
+                <AutoTextarea
+                  id="host-edit-newsletter-sub"
+                  aria-label="Chỉnh sửa lời nhắn cá nhân hóa trong phần Bảng lưu bút"
+                  className={`host-inline-editor host-inline-editor--body${newsletterEdited ? ' is-edited' : ''}`}
+                  maxLength={360}
+                  value={getFieldValue('newsletterSub', draftCopy.newsletter.subtitle)}
+                  placeholder={draftCopy.defaults.newsletterSub}
+                  onFocus={() => handleInlineFocus('newsletterSub', draftCopy.newsletter.subtitle)}
+                  onChange={(e) =>
+                    handleInlineChange(
+                      'newsletterSub',
+                      e.target.value,
+                      draftCopy.defaults.newsletterSub
+                    )
+                  }
+                  onBlur={() => handleInlineBlur('newsletterSub')}
                 />
               </div>
             </div>
