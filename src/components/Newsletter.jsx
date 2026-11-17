@@ -9,11 +9,15 @@ import {
   mergeServerNotes,
   NOTES_SYNC_EVENT,
   readLocalFallbackNotes,
+  readOwnedNoteTokens,
   saveLocalFallbackNotes,
+  saveOwnedNoteToken,
+  updateNoteInLocalFallback,
 } from '../notesSync'
 import {
   CheckIcon,
   ChevronDownIcon,
+  EditPenIcon,
   FeatherPenIcon,
   HeartIcon,
   NoteDoodleIcon,
@@ -53,6 +57,11 @@ export default function Newsletter() {
   const [guestbook, setGuestbook] = useState(() => buildInitialGuestbook(INITIAL_GUESTBOOK))
   const [newestId, setNewestId] = useState(null)
   const [selectedNote, setSelectedNote] = useState(null)
+  const [ownedTokens, setOwnedTokens] = useState(() => readOwnedNoteTokens())
+  const [editingNote, setEditingNote] = useState(null)
+  const [editSaving, setEditSaving] = useState(false)
+  const [editError, setEditError] = useState('')
+  const [editSuccessMsg, setEditSuccessMsg] = useState('')
   const [likedIds, setLikedIds] = useState(() => {
     try {
       const savedLikes = localStorage.getItem(LIKES_STORAGE_KEY)
@@ -87,7 +96,11 @@ export default function Newsletter() {
         setGuestbook(nextNotes)
         const deletedId = event?.detail?.deletedId
         if (deletedId) {
+          setOwnedTokens(readOwnedNoteTokens())
           setSelectedNote((prev) =>
+            prev && String(prev.id) === String(deletedId) ? null : prev
+          )
+          setEditingNote((prev) =>
             prev && String(prev.id) === String(deletedId) ? null : prev
           )
         }
@@ -151,13 +164,21 @@ export default function Newsletter() {
     }
   }
 
+  const closeSelectedNote = () => {
+    setSelectedNote(null)
+    setEditingNote(null)
+    setEditError('')
+    setEditSuccessMsg('')
+    setEditSaving(false)
+  }
+
   // Khóa cuộn trang & hỗ trợ phím Escape khi mở xem chi tiết tờ note
   useEffect(() => {
     if (!selectedNote) return
     document.body.classList.add('is-locked')
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
-        setSelectedNote(null)
+        closeSelectedNote()
       }
     }
     window.addEventListener('keydown', handleKeyDown)
@@ -253,6 +274,10 @@ export default function Newsletter() {
         return
       }
 
+      if (data.editToken) {
+        setOwnedTokens(saveOwnedNoteToken(data.note.id, data.editToken))
+      }
+
       if (data.shared === false) {
         const nextLocalOnly = [data.note, ...readLocalFallbackNotes()]
         saveLocalFallbackNotes(nextLocalOnly)
@@ -278,6 +303,7 @@ export default function Newsletter() {
       }
     } catch {
       const id = 'msg-' + Date.now()
+      const localToken = `local-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`
       const fallbackEntry = {
         id,
         name: authorName,
@@ -289,6 +315,7 @@ export default function Newsletter() {
         message: cleanMsg,
         time: 'Vừa dán',
       }
+      setOwnedTokens(saveOwnedNoteToken(id, localToken))
       const nextLocalOnly = [fallbackEntry, ...readLocalFallbackNotes()]
       saveLocalFallbackNotes(nextLocalOnly)
       const nextList = [fallbackEntry, ...guestbook]
@@ -304,6 +331,147 @@ export default function Newsletter() {
         setRole(NEWSLETTER.roles[0])
         setCustomRole('')
       }
+    }
+  }
+
+  const openEditMode = (noteItem) => {
+    if (!noteItem || !ownedTokens[noteItem.id]) return
+    setSelectedNote(noteItem)
+    setEditError('')
+    setEditSuccessMsg('')
+    setEditingNote({
+      id: noteItem.id,
+      name: noteItem.name || '',
+      role: noteItem.role || '',
+      attendance: noteItem.attendance === 'remote' ? 'remote' : 'attending',
+      noteColor: noteItem.colorId || noteItem.noteColor || NEWSLETTER.noteColors[0].id,
+      message: noteItem.message || '',
+    })
+  }
+
+  const computeUpdatedRoleLabel = (existingRole, nextAttendance) => {
+    const raw = String(existingRole || '').trim()
+    if (!raw || raw === 'Tham dự buổi lễ' || raw === 'Gửi lời chúc từ xa') {
+      return nextAttendance === 'remote' ? 'Gửi lời chúc từ xa' : 'Tham dự buổi lễ'
+    }
+    const baseRole = raw.replace(/\s*·\s*(Gửi từ xa|Tham dự)\s*$/i, '').trim()
+    if (!baseRole) {
+      return nextAttendance === 'remote' ? 'Gửi lời chúc từ xa' : 'Tham dự buổi lễ'
+    }
+    return nextAttendance === 'remote' ? `${baseRole} · Gửi từ xa` : baseRole
+  }
+
+  const handleSaveEdit = async (e) => {
+    e.preventDefault()
+    if (!editingNote) return
+
+    const editToken = ownedTokens[editingNote.id]
+    if (!editToken) {
+      setEditError('Bạn chỉ có thể chỉnh sửa tờ note của chính mình.')
+      return
+    }
+
+    const cleanName = editingNote.name.trim()
+    const cleanMsg = editingNote.message.trim()
+
+    if (showIdentityFields && !cleanName) {
+      setEditError('Đừng quên ghi tên để Mai biết lời chúc từ bạn nhé!')
+      return
+    }
+    if (!cleanMsg) {
+      setEditError('Nội dung lời chúc không được để trống.')
+      return
+    }
+
+    setEditSaving(true)
+    setEditError('')
+
+    const updatedRole = computeUpdatedRoleLabel(editingNote.role, editingNote.attendance)
+    const payload = {
+      id: editingNote.id,
+      editToken,
+      name: cleanName || selectedNote?.name || '',
+      role: updatedRole,
+      attendance: editingNote.attendance,
+      noteColor: editingNote.noteColor,
+      message: cleanMsg,
+    }
+
+    const applyLocalUpdate = (updatedFields) => {
+      const updatedObj = {
+        ...(selectedNote || {}),
+        ...updatedFields,
+        colorId: updatedFields.noteColor || selectedNote?.colorId || 'rose',
+        editedAt: updatedFields.editedAt || new Date().toISOString(),
+      }
+      updateNoteInLocalFallback(updatedObj)
+      setGuestbook((prev) => {
+        const nextList = prev.map((item) =>
+          String(item.id) === String(editingNote.id) ? { ...item, ...updatedFields, editedAt: updatedObj.editedAt } : item
+        )
+        dispatchNotesSync({ notes: nextList, shared: false })
+        return nextList
+      })
+      setSelectedNote(updatedObj)
+      setEditingNote(null)
+      setEditSuccessMsg('Đã cập nhật tờ note của bạn!')
+    }
+
+    if (editToken.startsWith('local-')) {
+      applyLocalUpdate({
+        name: payload.name,
+        role: payload.role,
+        attendance: payload.attendance,
+        noteColor: payload.noteColor,
+        message: payload.message,
+      })
+      setEditSaving(false)
+      return
+    }
+
+    try {
+      const res = await fetch('/api/notes', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      const data = await res.json().catch(() => null)
+
+      if (!res.ok || !data?.ok || !data.note) {
+        setEditError(data?.error || 'Không thể lưu chỉnh sửa lúc này. Vui lòng thử lại.')
+        return
+      }
+
+      if (data.shared === false) {
+        updateNoteInLocalFallback(data.note)
+      }
+
+      const nextList =
+        data.shared === false
+          ? mergeServerNotes(data)
+          : Array.isArray(data.notes)
+            ? data.notes
+            : guestbook.map((item) =>
+                String(item.id) === String(data.note.id) ? data.note : item
+              )
+
+      setGuestbook(nextList)
+      dispatchNotesSync({ notes: nextList, shared: data.shared })
+      setSelectedNote((prev) =>
+        prev
+          ? {
+              ...prev,
+              ...data.note,
+              colorId: data.note.noteColor || prev.colorId,
+            }
+          : null
+      )
+      setEditingNote(null)
+      setEditSuccessMsg('Đã cập nhật tờ note của bạn!')
+    } catch {
+      setEditError('Không thể kết nối máy chủ để lưu thay đổi. Vui lòng thử lại.')
+    } finally {
+      setEditSaving(false)
     }
   }
 
@@ -609,6 +777,7 @@ export default function Newsletter() {
                       {guestbook.map((entry, idx) => {
                       const isLiked = !!likedIds[entry.id]
                       const isFresh = entry.id === newestId
+                      const isMine = Boolean(ownedTokens[entry.id])
                       const colorId =
                         entry.noteColor ||
                         NEWSLETTER.noteColors[idx % NEWSLETTER.noteColors.length].id
@@ -616,10 +785,11 @@ export default function Newsletter() {
                       const doodle = entry.doodle || DOODLES[idx % DOODLES.length]
                       const layout = NOTE_LAYOUTS[idx % NOTE_LAYOUTS.length]
                       const hasPaperclip = fastener === 'tape-grid'
+                      const noteSnapshot = { ...entry, colorId, fastener, doodle, idx }
 
                       return (
                         <article
-                          className={`sticky-note sticky-note--${colorId} ${isFresh ? 'is-fresh' : ''}`}
+                          className={`sticky-note sticky-note--${colorId} ${isFresh ? 'is-fresh' : ''} ${isMine ? 'is-mine' : ''}`}
                           key={entry.id}
                           style={{
                             '--note-tilt': layout.tilt,
@@ -629,11 +799,19 @@ export default function Newsletter() {
                           role="button"
                           tabIndex={0}
                           aria-label={`Xem trọn vẹn lời chúc của ${entry.name}`}
-                          onClick={() => setSelectedNote({ ...entry, colorId, fastener, doodle, idx })}
+                          onClick={() => {
+                            setEditError('')
+                            setEditSuccessMsg('')
+                            setEditingNote(null)
+                            setSelectedNote(noteSnapshot)
+                          }}
                           onKeyDown={(e) => {
                             if (e.key === 'Enter' || e.key === ' ') {
                               e.preventDefault()
-                              setSelectedNote({ ...entry, colorId, fastener, doodle, idx })
+                              setEditError('')
+                              setEditSuccessMsg('')
+                              setEditingNote(null)
+                              setSelectedNote(noteSnapshot)
                             }
                           }}
                         >
@@ -662,28 +840,50 @@ export default function Newsletter() {
                             <div className="minimal-wish__author">
                               <div className="sticky-note__name-row">
                                 <strong className="minimal-wish__name">{entry.name}</strong>
-                                {isFresh && <span className="minimal-wish__new">Mới dán</span>}
+                                {isFresh ? (
+                                  <span className="minimal-wish__new">Mới dán</span>
+                                ) : isMine ? (
+                                  <span className="minimal-wish__mine">Của bạn</span>
+                                ) : null}
                               </div>
                               <span className="minimal-wish__role">{entry.role}</span>
                             </div>
 
-                            <button
-                              type="button"
-                              className={`minimal-wish__like ${isLiked ? 'is-liked' : ''}`}
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                toggleLike(entry.id)
-                              }}
-                              aria-label={
-                                isLiked
-                                  ? `Bỏ thả tim tờ note của ${entry.name}`
-                                  : `Thả tim tờ note của ${entry.name}`
-                              }
-                              aria-pressed={isLiked}
-                            >
-                              <HeartIcon size={13} />
-                              {!isLiked && <span>Thả tim</span>}
-                            </button>
+                            <div className="sticky-note__actions">
+                              {isMine && (
+                                <button
+                                  type="button"
+                                  className="minimal-wish__edit"
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    openEditMode(noteSnapshot)
+                                  }}
+                                  aria-label={`Chỉnh sửa tờ note của bạn`}
+                                  title="Sửa tờ note của bạn"
+                                >
+                                  <EditPenIcon size={12} />
+                                  <span>Sửa</span>
+                                </button>
+                              )}
+
+                              <button
+                                type="button"
+                                className={`minimal-wish__like ${isLiked ? 'is-liked' : ''}`}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  toggleLike(entry.id)
+                                }}
+                                aria-label={
+                                  isLiked
+                                    ? `Bỏ thả tim tờ note của ${entry.name}`
+                                    : `Thả tim tờ note của ${entry.name}`
+                                }
+                                aria-pressed={isLiked}
+                              >
+                                <HeartIcon size={13} />
+                                {!isLiked && !isMine && <span>Thả tim</span>}
+                              </button>
+                            </div>
                           </footer>
                         </article>
                       )
@@ -697,82 +897,254 @@ export default function Newsletter() {
         </div>
       </div>
 
-      {/* Modal phóng to xem trọn vẹn nội dung tờ note */}
-      {selectedNote && (
-        <div
-          className="note-modal"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="note-modal-author"
-          onClick={() => setSelectedNote(null)}
-        >
-          <div className="note-modal__backdrop" />
+      {/* Modal phóng to xem trọn vẹn & chỉnh sửa tờ note của chính mình */}
+      {selectedNote && (() => {
+        const isSelectedMine = Boolean(ownedTokens[selectedNote.id])
+        const isEditingThis = Boolean(
+          editingNote && isSelectedMine && String(editingNote.id) === String(selectedNote.id)
+        )
+        const modalColor = isEditingThis ? editingNote.noteColor : selectedNote.colorId
+
+        return (
           <div
-            className={`note-modal__card sticky-note--${selectedNote.colorId}`}
-            onClick={(e) => e.stopPropagation()}
+            className="note-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="note-modal-author"
+            onClick={closeSelectedNote}
           >
-            {selectedNote.fastener === 'pushpin' ? (
-              <span className="sticky-note__pin" aria-hidden="true" />
-            ) : (
-              <span
-                className={`sticky-note__tape sticky-note__tape--${selectedNote.fastener}`}
-                aria-hidden="true"
-              />
-            )}
-
-            {selectedNote.fastener === 'tape-grid' && (
-              <span className="sticky-note__clip" aria-hidden="true">
-                <PaperclipIcon size={24} />
-              </span>
-            )}
-
-            <button
-              type="button"
-              className="note-modal__close"
-              onClick={() => setSelectedNote(null)}
-              aria-label="Đóng tờ note"
+            <div className="note-modal__backdrop" />
+            <div
+              className={`note-modal__card sticky-note--${modalColor}${isEditingThis ? ' is-editing' : ''}`}
+              onClick={(e) => e.stopPropagation()}
             >
-              <XIcon size={18} />
-            </button>
+              {selectedNote.fastener === 'pushpin' ? (
+                <span className="sticky-note__pin" aria-hidden="true" />
+              ) : (
+                <span
+                  className={`sticky-note__tape sticky-note__tape--${selectedNote.fastener}`}
+                  aria-hidden="true"
+                />
+              )}
 
-            <div className="note-modal__body" data-lenis-prevent>
-              <p className="note-modal__msg">{selectedNote.message}</p>
-            </div>
-
-            <footer className="note-modal__foot">
-              <div className="minimal-wish__author">
-                <div className="sticky-note__name-row">
-                  <strong className="note-modal__name" id="note-modal-author">
-                    {selectedNote.name}
-                  </strong>
-                  {selectedNote.id === newestId && (
-                    <span className="minimal-wish__new">Mới dán</span>
-                  )}
-                </div>
-                <span className="note-modal__meta">
-                  {selectedNote.role}
-                  {selectedNote.time ? ` · ${selectedNote.time}` : ''}
+              {selectedNote.fastener === 'tape-grid' && (
+                <span className="sticky-note__clip" aria-hidden="true">
+                  <PaperclipIcon size={24} />
                 </span>
-              </div>
+              )}
 
               <button
                 type="button"
-                className={`minimal-wish__like ${likedIds[selectedNote.id] ? 'is-liked' : ''}`}
-                onClick={() => toggleLike(selectedNote.id)}
-                aria-label={
-                  likedIds[selectedNote.id]
-                    ? `Bỏ thả tim tờ note của ${selectedNote.name}`
-                    : `Thả tim tờ note của ${selectedNote.name}`
-                }
-                aria-pressed={!!likedIds[selectedNote.id]}
+                className="note-modal__close"
+                onClick={closeSelectedNote}
+                aria-label="Đóng tờ note"
               >
-                <HeartIcon size={15} />
-                {!likedIds[selectedNote.id] && <span>Thả tim</span>}
+                <XIcon size={18} />
               </button>
-            </footer>
+
+              {isEditingThis ? (
+                <form className="note-modal__edit-form" onSubmit={handleSaveEdit} noValidate>
+                  <div className="note-modal__edit-head">
+                    <h4 className="note-modal__edit-title" id="note-modal-author">
+                      <EditPenIcon size={15} />
+                      <span>Chỉnh sửa tờ note của bạn</span>
+                    </h4>
+                    <div
+                      className="note-swatches"
+                      role="radiogroup"
+                      aria-label="Đổi màu giấy note"
+                    >
+                      {NEWSLETTER.noteColors.map((item) => {
+                        const active = editingNote.noteColor === item.id
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            role="radio"
+                            aria-checked={active}
+                            aria-label={`Giấy note màu ${item.label}`}
+                            title={item.label}
+                            className={`note-swatch ${active ? 'is-active' : ''}`}
+                            style={{ '--swatch-bg': item.swatch }}
+                            onClick={() =>
+                              setEditingNote((prev) => ({ ...prev, noteColor: item.id }))
+                            }
+                          />
+                        )
+                      })}
+                    </div>
+                  </div>
+
+                  {showIdentityFields && (
+                    <div className="note-modal__edit-field">
+                      <label className="minimal-label" htmlFor="edit-note-name">
+                        Họ và tên <span className="req">*</span>
+                      </label>
+                      <input
+                        id="edit-note-name"
+                        type="text"
+                        className="minimal-input note-modal__edit-input"
+                        maxLength={60}
+                        value={editingNote.name}
+                        onChange={(e) => {
+                          setEditingNote((prev) => ({ ...prev, name: e.target.value }))
+                          if (editError) setEditError('')
+                        }}
+                        disabled={editSaving}
+                      />
+                    </div>
+                  )}
+
+                  <div className="note-modal__edit-field">
+                    <span className="minimal-label">Trạng thái tham dự</span>
+                    <div className="minimal-choices note-modal__edit-choices">
+                      <label
+                        className={`minimal-choice ${editingNote.attendance === 'attending' ? 'is-selected' : ''}`}
+                      >
+                        <input
+                          type="radio"
+                          name="edit-attendance"
+                          value="attending"
+                          checked={editingNote.attendance === 'attending'}
+                          onChange={() =>
+                            setEditingNote((prev) => ({ ...prev, attendance: 'attending' }))
+                          }
+                          disabled={editSaving}
+                        />
+                        <span>{copy.newsletter.attendingChoice}</span>
+                      </label>
+                      <label
+                        className={`minimal-choice ${editingNote.attendance === 'remote' ? 'is-selected' : ''}`}
+                      >
+                        <input
+                          type="radio"
+                          name="edit-attendance"
+                          value="remote"
+                          checked={editingNote.attendance === 'remote'}
+                          onChange={() =>
+                            setEditingNote((prev) => ({ ...prev, attendance: 'remote' }))
+                          }
+                          disabled={editSaving}
+                        />
+                        <span>{copy.newsletter.remoteChoice}</span>
+                      </label>
+                    </div>
+                  </div>
+
+                  <div className="note-modal__edit-field">
+                    <label className="minimal-label" htmlFor="edit-note-message">
+                      Lời chúc trên tờ note <span className="req">*</span>
+                    </label>
+                    <textarea
+                      id="edit-note-message"
+                      className="minimal-input note-modal__edit-textarea"
+                      rows={4}
+                      maxLength={1200}
+                      value={editingNote.message}
+                      onChange={(e) => {
+                        setEditingNote((prev) => ({ ...prev, message: e.target.value }))
+                        if (editError) setEditError('')
+                      }}
+                      disabled={editSaving}
+                      autoFocus
+                    />
+                  </div>
+
+                  {editError && (
+                    <p className="wishes-feedback wishes-feedback--error" role="status">
+                      {editError}
+                    </p>
+                  )}
+
+                  <div className="note-modal__edit-actions">
+                    <button
+                      type="button"
+                      className="pill pill--light note-modal__edit-cancel"
+                      onClick={() => {
+                        setEditingNote(null)
+                        setEditError('')
+                      }}
+                      disabled={editSaving}
+                    >
+                      Hủy
+                    </button>
+                    <button
+                      type="submit"
+                      className="pill pill--rose note-modal__edit-save"
+                      disabled={editSaving}
+                    >
+                      <CheckIcon size={15} />
+                      <span>{editSaving ? 'Đang lưu...' : 'Lưu thay đổi'}</span>
+                    </button>
+                  </div>
+                </form>
+              ) : (
+                <>
+                  {editSuccessMsg && (
+                    <div className="note-modal__notice" role="status">
+                      <CheckIcon size={14} />
+                      <span>{editSuccessMsg}</span>
+                    </div>
+                  )}
+
+                  <div className="note-modal__body" data-lenis-prevent>
+                    <p className="note-modal__msg">{selectedNote.message}</p>
+                  </div>
+
+                  <footer className="note-modal__foot">
+                    <div className="minimal-wish__author">
+                      <div className="sticky-note__name-row">
+                        <strong className="note-modal__name" id="note-modal-author">
+                          {selectedNote.name}
+                        </strong>
+                        {selectedNote.id === newestId ? (
+                          <span className="minimal-wish__new">Mới dán</span>
+                        ) : isSelectedMine ? (
+                          <span className="minimal-wish__mine">Của bạn</span>
+                        ) : null}
+                      </div>
+                      <span className="note-modal__meta">
+                        {selectedNote.role}
+                        {selectedNote.time ? ` · ${selectedNote.time}` : ''}
+                        {selectedNote.editedAt ? ' · Đã chỉnh sửa' : ''}
+                      </span>
+                    </div>
+
+                    <div className="note-modal__foot-actions">
+                      {isSelectedMine && (
+                        <button
+                          type="button"
+                          className="minimal-wish__edit minimal-wish__edit--modal"
+                          onClick={() => openEditMode(selectedNote)}
+                          aria-label="Chỉnh sửa tờ note của bạn"
+                        >
+                          <EditPenIcon size={13} />
+                          <span>Sửa note</span>
+                        </button>
+                      )}
+
+                      <button
+                        type="button"
+                        className={`minimal-wish__like ${likedIds[selectedNote.id] ? 'is-liked' : ''}`}
+                        onClick={() => toggleLike(selectedNote.id)}
+                        aria-label={
+                          likedIds[selectedNote.id]
+                            ? `Bỏ thả tim tờ note của ${selectedNote.name}`
+                            : `Thả tim tờ note của ${selectedNote.name}`
+                        }
+                        aria-pressed={!!likedIds[selectedNote.id]}
+                      >
+                        <HeartIcon size={15} />
+                        {!likedIds[selectedNote.id] && <span>Thả tim</span>}
+                      </button>
+                    </div>
+                  </footer>
+                </>
+              )}
+            </div>
           </div>
-        </div>
-      )}
+        )
+      })()}
     </section>
   )
 }

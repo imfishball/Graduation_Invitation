@@ -2,6 +2,50 @@ export const NOTES_SYNC_EVENT = 'graduation:notes-sync'
 export const LOCAL_FALLBACK_KEY = 'graduation_guestbook_local_only_v1'
 export const DELETED_FALLBACK_KEY = 'graduation_guestbook_deleted_local_v1'
 export const LIKES_STORAGE_KEY = 'graduation_guestbook_likes_v1'
+export const OWNED_NOTES_KEY = 'graduation_guestbook_owned_tokens_v1'
+
+export function readOwnedNoteTokens() {
+  try {
+    const saved = localStorage.getItem(OWNED_NOTES_KEY)
+    if (!saved) return {}
+    const parsed = JSON.parse(saved)
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : {}
+  } catch {
+    return {}
+  }
+}
+
+export function saveOwnedNoteToken(noteId, editToken) {
+  const idStr = String(noteId || '').trim()
+  const tokenStr = String(editToken || '').trim()
+  if (!idStr || !tokenStr) return readOwnedNoteTokens()
+
+  const next = { ...readOwnedNoteTokens(), [idStr]: tokenStr }
+  try {
+    localStorage.setItem(OWNED_NOTES_KEY, JSON.stringify(next))
+  } catch {
+    // Bỏ qua nếu trình duyệt chặn localStorage
+  }
+  return next
+}
+
+export function getOwnedNoteToken(noteId) {
+  const idStr = String(noteId || '').trim()
+  if (!idStr) return ''
+  const tokens = readOwnedNoteTokens()
+  return typeof tokens[idStr] === 'string' ? tokens[idStr] : ''
+}
+
+export function updateNoteInLocalFallback(updatedNote) {
+  const idStr = String(updatedNote?.id || '')
+  if (!idStr) return
+  const current = readLocalFallbackNotes()
+  const idx = current.findIndex((item) => String(item?.id || '') === idStr)
+  if (idx === -1) return
+  const next = [...current]
+  next[idx] = { ...next[idx], ...updatedNote }
+  saveLocalFallbackNotes(next)
+}
 
 export function readLocalFallbackNotes() {
   try {
@@ -85,6 +129,16 @@ export function removeNoteFromLocalCaches(deletedId, { trackLocalDelete = false 
         delete parsedLikes[idStr]
         localStorage.setItem(LIKES_STORAGE_KEY, JSON.stringify(parsedLikes))
       }
+    }
+  } catch {
+    // ignore
+  }
+
+  try {
+    const ownedTokens = readOwnedNoteTokens()
+    if (idStr in ownedTokens) {
+      delete ownedTokens[idStr]
+      localStorage.setItem(OWNED_NOTES_KEY, JSON.stringify(ownedTokens))
     }
   } catch {
     // ignore

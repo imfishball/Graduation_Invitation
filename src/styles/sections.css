@@ -3989,6 +3989,58 @@ body.is-locked .mobile-bottom-bar {
   font-weight: 600;
 }
 
+.minimal-wish__mine {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 2px 7px;
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(184, 83, 99, 0.32);
+  color: var(--rose-deep);
+  font-family: var(--font-display);
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.sticky-note__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.minimal-wish__edit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 4px 8px;
+  min-height: 26px;
+  border-radius: var(--r-pill);
+  border: 1px solid rgba(184, 83, 99, 0.28);
+  background: rgba(255, 255, 255, 0.76);
+  color: var(--rose-deep);
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 150ms ease, border-color 150ms ease, transform 150ms ease;
+}
+
+.minimal-wish__edit:hover {
+  background: #ffffff;
+  border-color: var(--rose-deep);
+  transform: translateY(-1px);
+}
+
+.minimal-wish__edit--modal {
+  padding: 6px 12px;
+  min-height: 32px;
+  font-size: 12px;
+}
+
 .minimal-wish__like {
   background: transparent;
   border: none;
@@ -4158,6 +4210,106 @@ body.is-locked .mobile-bottom-bar {
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--muted);
+}
+
+.note-modal__foot-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.note-modal__notice {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  padding: 5px 11px;
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(72, 187, 120, 0.36);
+  color: #22543d;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.note-modal__card.is-editing {
+  width: min(100%, 490px);
+}
+
+.note-modal__edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 4px;
+}
+
+.note-modal__edit-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding-right: 34px;
+}
+
+.note-modal__edit-title {
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.note-modal__edit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.note-modal__edit-input {
+  min-height: 40px;
+  padding: 8px 12px;
+  font-size: 14px;
+  background: rgba(255, 255, 255, 0.86);
+}
+
+.note-modal__edit-choices {
+  gap: 8px;
+}
+
+.note-modal__edit-choices .minimal-choice {
+  min-height: 36px;
+  padding: 6px 10px;
+  font-size: 12.5px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.note-modal__edit-textarea {
+  min-height: 112px;
+  resize: vertical;
+  line-height: 1.6;
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.note-modal__edit-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 6px;
+  border-top: 1px dashed rgba(154, 120, 108, 0.3);
+}
+
+.note-modal__edit-cancel,
+.note-modal__edit-save {
+  height: 38px;
+  padding: 0 16px;
+  font-size: 13px;
 }
 
 @media (min-width: 960px) {
@@ -5213,9 +5365,22 @@ body.is-locked .mobile-bottom-bar {
     letter-spacing: 0.03em;
   }
 
-  .minimal-wish__new {
+  .minimal-wish__new,
+  .minimal-wish__mine {
     font-size: 8px;
     padding: 1px 4px;
+  }
+
+  .minimal-wish__edit {
+    font-size: 9px;
+    gap: 2px;
+    min-height: 20px;
+    padding: 2px 6px;
+  }
+
+  .minimal-wish__edit svg {
+    width: 10px;
+    height: 10px;
   }
 
   .minimal-wish__like {
@@ -5280,6 +5445,23 @@ body.is-locked .mobile-bottom-bar {
   .note-modal__foot .minimal-wish__like svg {
     width: 14px;
     height: 14px;
+  }
+
+  .note-modal__foot .minimal-wish__edit--modal {
+    font-size: 11.5px;
+    min-height: 30px;
+    padding: 4px 10px;
+    gap: 4px;
+  }
+
+  .note-modal__foot .minimal-wish__edit--modal svg {
+    width: 13px;
+    height: 13px;
+  }
+
+  .note-modal__edit-input,
+  .note-modal__edit-textarea {
+    font-size: 16px;
   }
 }
 

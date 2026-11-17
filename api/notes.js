@@ -233,6 +233,31 @@ async function gistWriteNotes(gist, notes) {
   }
 }
 
+function hashEditToken(token) {
+  return crypto.createHash('sha256').update(String(token ?? ''), 'utf8').digest('hex')
+}
+
+function verifyEditToken(providedToken, storedHash) {
+  if (typeof providedToken !== 'string' || !providedToken.trim()) return false
+  if (typeof storedHash !== 'string' || !/^[0-9a-f]{64}$/i.test(storedHash)) return false
+
+  const actualBuf = Buffer.from(hashEditToken(providedToken.trim()), 'utf8')
+  const expectedBuf = Buffer.from(storedHash.toLowerCase(), 'utf8')
+  if (actualBuf.length !== expectedBuf.length) return false
+  return crypto.timingSafeEqual(actualBuf, expectedBuf)
+}
+
+function toPublicNote(note) {
+  if (!note || typeof note !== 'object') return note
+  const { editTokenHash: _hidden, ...publicFields } = note
+  return publicFields
+}
+
+function toPublicNotes(list) {
+  if (!Array.isArray(list)) return []
+  return list.map(toPublicNote)
+}
+
 function buildNewNote(body, existingCount) {
   const cleanName = typeof body?.name === 'string' ? body.name.trim().slice(0, 60) : ''
   const cleanRole = typeof body?.role === 'string' ? body.role.trim().slice(0, 80) : ''
@@ -248,9 +273,11 @@ function buildNewNote(body, existingCount) {
   }
 
   const id = `msg-${Date.now()}-${crypto.randomBytes(3).toString('hex')}`
+  const editToken = crypto.randomBytes(24).toString('base64url')
   const offset = (existingCount + 2) % FASTENERS.length
 
   return {
+    editToken,
     note: {
       id,
       name: cleanName,
@@ -262,6 +289,7 @@ function buildNewNote(body, existingCount) {
       message: cleanMsg,
       time: formatVietnamTime(),
       createdAt: new Date().toISOString(),
+      editTokenHash: hashEditToken(editToken),
     },
   }
 }
@@ -270,21 +298,21 @@ async function loadNotesWithMeta() {
   const kv = getKvConfig()
   if (kv) {
     const notes = await kvReadNotes(kv)
-    return { notes, backend: 'kv', shared: true }
+    return { notes: toPublicNotes(notes), backend: 'kv', shared: true }
   }
 
   const gist = getGistConfig()
   if (gist) {
     const notes = await gistReadNotes(gist)
-    return { notes, backend: 'gist', shared: true }
+    return { notes: toPublicNotes(notes), backend: 'gist', shared: true }
   }
 
   const notes = await readLocalNotesFile()
   if (process.env.VERCEL) {
-    return { notes, backend: 'readonly', shared: false }
+    return { notes: toPublicNotes(notes), backend: 'readonly', shared: false }
   }
 
-  return { notes, backend: 'file', shared: true }
+  return { notes: toPublicNotes(notes), backend: 'file', shared: true }
 }
 
 async function appendNoteWithMeta(body) {
@@ -295,7 +323,13 @@ async function appendNoteWithMeta(body) {
     if (built.error) return { validationError: built.error }
     const updated = [built.note, ...current].slice(0, MAX_STORED_NOTES)
     await kvWriteNotes(kv, updated)
-    return { note: built.note, notes: updated, backend: 'kv', shared: true }
+    return {
+      note: toPublicNote(built.note),
+      editToken: built.editToken,
+      notes: toPublicNotes(updated),
+      backend: 'kv',
+      shared: true,
+    }
   }
 
   const gist = getGistConfig()
@@ -305,7 +339,13 @@ async function appendNoteWithMeta(body) {
     if (built.error) return { validationError: built.error }
     const updated = [built.note, ...current].slice(0, MAX_STORED_NOTES)
     await gistWriteNotes(gist, updated)
-    return { note: built.note, notes: updated, backend: 'gist', shared: true }
+    return {
+      note: toPublicNote(built.note),
+      editToken: built.editToken,
+      notes: toPublicNotes(updated),
+      backend: 'gist',
+      shared: true,
+    }
   }
 
   if (process.env.VERCEL) {
@@ -313,7 +353,13 @@ async function appendNoteWithMeta(body) {
     const built = buildNewNote(body, current.length)
     if (built.error) return { validationError: built.error }
     const updated = [built.note, ...current].slice(0, MAX_STORED_NOTES)
-    return { note: built.note, notes: updated, backend: 'readonly', shared: false }
+    return {
+      note: toPublicNote(built.note),
+      editToken: built.editToken,
+      notes: toPublicNotes(updated),
+      backend: 'readonly',
+      shared: false,
+    }
   }
 
   let outcome
@@ -326,7 +372,110 @@ async function appendNoteWithMeta(body) {
     }
     const updated = [built.note, ...current].slice(0, MAX_STORED_NOTES)
     await writeLocalNotesFile(updated)
-    outcome = { note: built.note, notes: updated, backend: 'file', shared: true }
+    outcome = {
+      note: toPublicNote(built.note),
+      editToken: built.editToken,
+      notes: toPublicNotes(updated),
+      backend: 'file',
+      shared: true,
+    }
+  })
+
+  fileWriteQueue = task.catch(() => {})
+  await task
+  return outcome
+}
+
+async function updateNoteWithMeta(body) {
+  const cleanId = typeof body?.id === 'string' ? body.id.trim().slice(0, 120) : ''
+  const editToken = typeof body?.editToken === 'string' ? body.editToken.trim() : ''
+  const hasName = typeof body?.name === 'string'
+  const cleanName = hasName ? body.name.trim().slice(0, 60) : ''
+  const hasRole = typeof body?.role === 'string'
+  const cleanRole = hasRole ? body.role.trim().slice(0, 80) : ''
+  const cleanMsg = typeof body?.message === 'string' ? body.message.trim().slice(0, 1200) : ''
+  const hasAttendance = body?.attendance === 'attending' || body?.attendance === 'remote'
+  const hasColor = ALLOWED_COLORS.has(body?.noteColor)
+
+  if (!cleanId) {
+    return { validationError: 'Thiếu mã tờ note cần chỉnh sửa.' }
+  }
+  if (!editToken) {
+    return { forbidden: true }
+  }
+  if (hasName && !cleanName) {
+    return { validationError: 'Vui lòng nhập tên người gửi lời chúc.' }
+  }
+  if (!cleanMsg) {
+    return { validationError: 'Vui lòng nhập nội dung lời chúc trước khi lưu.' }
+  }
+
+  const applyEdit = (list) => {
+    const idx = list.findIndex((item) => String(item?.id || '') === cleanId)
+    if (idx === -1) return { notFound: true }
+
+    const existing = list[idx]
+    if (!verifyEditToken(editToken, existing?.editTokenHash)) {
+      return { forbidden: true }
+    }
+
+    const updatedNote = {
+      ...existing,
+      name: hasName ? cleanName : existing.name,
+      role: hasRole && cleanRole ? cleanRole : existing.role,
+      attendance: hasAttendance ? body.attendance : existing.attendance,
+      noteColor: hasColor ? body.noteColor : existing.noteColor,
+      message: cleanMsg,
+      editedAt: new Date().toISOString(),
+    }
+
+    const nextList = [...list]
+    nextList[idx] = updatedNote
+    return { note: updatedNote, notes: nextList }
+  }
+
+  const kv = getKvConfig()
+  if (kv) {
+    const current = await kvReadNotes(kv)
+    const res = applyEdit(current)
+    if (res.notFound) return { notFound: true, notes: toPublicNotes(current), backend: 'kv', shared: true }
+    if (res.forbidden) return { forbidden: true, backend: 'kv', shared: true }
+    await kvWriteNotes(kv, res.notes)
+    return { note: toPublicNote(res.note), notes: toPublicNotes(res.notes), backend: 'kv', shared: true }
+  }
+
+  const gist = getGistConfig()
+  if (gist) {
+    const current = await gistReadNotes(gist)
+    const res = applyEdit(current)
+    if (res.notFound) return { notFound: true, notes: toPublicNotes(current), backend: 'gist', shared: true }
+    if (res.forbidden) return { forbidden: true, backend: 'gist', shared: true }
+    await gistWriteNotes(gist, res.notes)
+    return { note: toPublicNote(res.note), notes: toPublicNotes(res.notes), backend: 'gist', shared: true }
+  }
+
+  if (process.env.VERCEL) {
+    const current = await readLocalNotesFile()
+    const res = applyEdit(current)
+    if (res.forbidden) return { forbidden: true, backend: 'readonly', shared: false }
+    if (res.notFound) return { notFound: true, notes: toPublicNotes(current), backend: 'readonly', shared: false }
+    return { note: toPublicNote(res.note), notes: toPublicNotes(res.notes), backend: 'readonly', shared: false }
+  }
+
+  let outcome
+  const task = fileWriteQueue.then(async () => {
+    const current = await readLocalNotesFile()
+    const res = applyEdit(current)
+    if (res.notFound) {
+      outcome = { notFound: true, notes: toPublicNotes(current), backend: 'file', shared: true }
+      return
+    }
+    if (res.forbidden) {
+      outcome = { forbidden: true, backend: 'file', shared: true }
+      return
+    }
+    await writeLocalNotesFile(res.notes)
+    outcome = { note: toPublicNote(res.note), notes: toPublicNotes(res.notes), backend: 'file', shared: true }
   })
 
   fileWriteQueue = task.catch(() => {})
@@ -350,24 +499,24 @@ async function deleteNoteWithMeta(noteId) {
   if (kv) {
     const current = await kvReadNotes(kv)
     const updated = removeFromList(current)
-    if (!updated) return { deletedId: cleanId, notes: current, backend: 'kv', shared: true, notFound: true }
+    if (!updated) return { deletedId: cleanId, notes: toPublicNotes(current), backend: 'kv', shared: true, notFound: true }
     await kvWriteNotes(kv, updated)
-    return { deletedId: cleanId, notes: updated, backend: 'kv', shared: true }
+    return { deletedId: cleanId, notes: toPublicNotes(updated), backend: 'kv', shared: true }
   }
 
   const gist = getGistConfig()
   if (gist) {
     const current = await gistReadNotes(gist)
     const updated = removeFromList(current)
-    if (!updated) return { deletedId: cleanId, notes: current, backend: 'gist', shared: true, notFound: true }
+    if (!updated) return { deletedId: cleanId, notes: toPublicNotes(current), backend: 'gist', shared: true, notFound: true }
     await gistWriteNotes(gist, updated)
-    return { deletedId: cleanId, notes: updated, backend: 'gist', shared: true }
+    return { deletedId: cleanId, notes: toPublicNotes(updated), backend: 'gist', shared: true }
   }
 
   if (process.env.VERCEL) {
     const current = await readLocalNotesFile()
     const updated = removeFromList(current) || current
-    return { deletedId: cleanId, notes: updated, backend: 'readonly', shared: false }
+    return { deletedId: cleanId, notes: toPublicNotes(updated), backend: 'readonly', shared: false }
   }
 
   let outcome
@@ -375,11 +524,11 @@ async function deleteNoteWithMeta(noteId) {
     const current = await readLocalNotesFile()
     const updated = removeFromList(current)
     if (!updated) {
-      outcome = { deletedId: cleanId, notes: current, backend: 'file', shared: true, notFound: true }
+      outcome = { deletedId: cleanId, notes: toPublicNotes(current), backend: 'file', shared: true, notFound: true }
       return
     }
     await writeLocalNotesFile(updated)
-    outcome = { deletedId: cleanId, notes: updated, backend: 'file', shared: true }
+    outcome = { deletedId: cleanId, notes: toPublicNotes(updated), backend: 'file', shared: true }
   })
 
   fileWriteQueue = task.catch(() => {})
@@ -435,6 +584,44 @@ export default async function handler(req, res) {
     }
   }
 
+  if (req.method === 'PATCH' || req.method === 'PUT') {
+    let body
+    try {
+      body = await readJsonBody(req)
+    } catch (err) {
+      const status = err?.code === 'PAYLOAD_TOO_LARGE' ? 413 : 400
+      return sendJson(res, status, { ok: false, error: 'Dữ liệu chỉnh sửa không hợp lệ.' })
+    }
+
+    try {
+      const result = await updateNoteWithMeta(body)
+      if (result.validationError) {
+        return sendJson(res, 400, { ok: false, error: result.validationError })
+      }
+      if (result.forbidden) {
+        return sendJson(res, 403, {
+          ok: false,
+          code: 'FORBIDDEN',
+          error: 'Bạn chỉ có thể chỉnh sửa tờ note của chính mình.',
+        })
+      }
+      if (result.notFound) {
+        return sendJson(res, 404, {
+          ok: false,
+          code: 'NOT_FOUND',
+          error: 'Không tìm thấy tờ note này trên bảng.',
+          notes: result.notes,
+        })
+      }
+      return sendJson(res, 200, { ok: true, ...result })
+    } catch (err) {
+      return sendJson(res, 500, {
+        ok: false,
+        error: 'Không thể cập nhật tờ note lúc này. Vui lòng thử lại.',
+      })
+    }
+  }
+
   if (req.method === 'DELETE') {
     let body = {}
     try {
@@ -486,6 +673,6 @@ export default async function handler(req, res) {
     }
   }
 
-  res.setHeader('Allow', 'GET, POST, DELETE')
+  res.setHeader('Allow', 'GET, POST, PATCH, PUT, DELETE')
   return sendJson(res, 405, { ok: false, error: 'Phương thức không hợp lệ.' })
 }
