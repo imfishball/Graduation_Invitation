@@ -20,7 +20,8 @@ export const GRADUATION_INFO = {
 
 export const NAV_LINKS = [
   { label: 'Trang Chủ', href: '#top' },
-  { label: 'Thời Gian & Địa Điểm', href: '#about' },
+  { label: 'Lời Chào', href: '#about' },
+  { label: 'Thời Gian & Địa Điểm', href: '#countdown' },
   { label: 'Gửi Lời Chúc', href: '#contact' },
   { label: 'Hành Trình', href: '#adventures' },
   { label: 'Kỷ Yếu', href: '#instagram' },
@@ -91,8 +92,8 @@ export const POSTS = [
     location: 'Tòa Nhà Chính • UIT',
     title: 'Ngước Nhìn Mái Trường UIT',
     excerpt: 'Tòa nhà kính và hàng cờ bay trong nắng nhẹ, gói trọn bốn năm thanh xuân rực rỡ.',
-    image: '/assets/post-uit-building.jpg',
-    alt: 'Tòa nhà kính Trường Đại học Công nghệ Thông tin UIT vươn cao rực rỡ giữa tán cây xanh và cờ Tổ quốc',
+    image: '/assets/post-uit-building.jpg?v=2',
+    alt: 'Biểu tượng UIT — Welcome to University of Information Technology trước tòa nhà kính và hàng cờ tung bay trong nắng nhẹ',
   },
 ]
 
@@ -174,7 +175,7 @@ export const NEWSLETTER = {
   script: 'gửi gắm tâm tình',
   title: 'Bảng Lưu Bút & Lời Chúc',
   cta: 'Dán Note Lên Bảng',
-  placeholderName: 'Ví dụ: Minh Anh K17',
+  placeholderName: 'Ví dụ: Cha Eun Woo',
   roles: ['Bạn bè', 'Gia đình & Người thân', 'Khác'],
   noteColors: [
     { id: 'rose', label: 'Hồng Đào', swatch: '#fadcd7' },

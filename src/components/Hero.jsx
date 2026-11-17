@@ -165,7 +165,7 @@ export default function Hero({ entered = true }) {
         </div>
       </div>
 
-      <a className="hero__scroll-cue" href="#countdown" aria-label="Cuộn xuống xem lịch lễ tốt nghiệp">
+      <a className="hero__scroll-cue" href="#about" aria-label="Cuộn xuống đọc lời chào nhỏ">
         <span className="hero__scroll-cue-text">Cuộn xuống</span>
         <span className="hero__scroll-cue-icon" aria-hidden="true">
           <ChevronDownIcon size={14} />

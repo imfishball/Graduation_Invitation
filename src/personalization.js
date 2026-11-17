@@ -810,7 +810,7 @@ function buildBaseCopy({
     newsletter: {
       subtitle:
         'Hãy viết đôi dòng lên một tờ giấy note và dán lên bảng kỷ niệm — từng lời chúc hay cái hẹn chiều 27/11 đều là mảnh ghép thanh xuân Mai sẽ giữ mãi.',
-      placeholderName: 'Ví dụ: Minh Anh K17',
+      placeholderName: 'Ví dụ: Cha Eun Woo',
       roleLabel: 'Bạn đến với Mai là',
       attendanceLabel: 'Bạn có tham dự buổi lễ không?',
       attendingChoice: 'Rất vui được tham dự',

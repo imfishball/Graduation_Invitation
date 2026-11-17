@@ -1471,7 +1471,7 @@ body.is-locked .mobile-bottom-bar {
 
 /* ---------- About ---------- */
 .about {
-  background: var(--rose-blush);
+  background: var(--cream);
   overflow: hidden;
 }
 
@@ -1497,9 +1497,10 @@ body.is-locked .mobile-bottom-bar {
 .about__frame {
   margin: 0;
   background: var(--white, #fff);
+  border: 1px solid rgba(214, 138, 149, 0.14);
   padding: 14px 16px 7px 14px;
   width: 363px;
-  box-shadow: 0 8px 24px -6px rgba(42, 43, 47, 0.08);
+  box-shadow: 0 10px 26px -6px rgba(42, 43, 47, 0.1);
   transition:
     transform 450ms var(--ease-framer),
     box-shadow 450ms ease;
@@ -1545,7 +1546,8 @@ body.is-locked .mobile-bottom-bar {
   gap: 10px;
   padding: 8px;
   background: var(--white, #fff);
-  box-shadow: 0 8px 20px -4px rgba(42, 43, 47, 0.12);
+  border: 1px solid rgba(214, 138, 149, 0.14);
+  box-shadow: 0 10px 22px -4px rgba(42, 43, 47, 0.13);
   transform: rotate(6deg);
   transition:
     transform 450ms var(--ease-spring-soft),
@@ -2063,7 +2065,8 @@ body.is-locked .mobile-bottom-bar {
 
 /* ---------- Countdown Timer ---------- */
 .countdown-section {
-  padding-block: 60px 60px;
+  background: var(--rose-blush);
+  padding-block: 76px 88px;
 }
 
 .countdown-card__meta {
@@ -2332,8 +2335,8 @@ body.is-locked .mobile-bottom-bar {
 }
 
 .ceremony-wrap {
-  margin-top: 124px;
-  padding-top: 96px;
+  margin-top: 84px;
+  padding-top: 72px;
   border-top: 1px solid rgba(214, 139, 150, 0.22);
 }
 
@@ -2800,8 +2803,8 @@ body.is-locked .mobile-bottom-bar {
 
 @media (max-width: 1120px) {
   .ceremony-wrap {
-    margin-top: 96px;
-    padding-top: 76px;
+    margin-top: 64px;
+    padding-top: 52px;
   }
 
   .ceremony-venue__grid {
@@ -2826,8 +2829,8 @@ body.is-locked .mobile-bottom-bar {
 
 @media (max-width: 809.98px) {
   .ceremony-wrap {
-    margin-top: 72px;
-    padding-top: 60px;
+    margin-top: 48px;
+    padding-top: 44px;
   }
 
   .ceremony-venue__grid {
@@ -3252,8 +3255,35 @@ body.is-locked .mobile-bottom-bar {
 .minimal-select {
   appearance: none;
   -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: none;
   padding-right: 38px;
   cursor: pointer;
+}
+
+.minimal-select::-ms-expand {
+  display: none;
+}
+
+.minimal-select--trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  text-align: left;
+  position: relative;
+}
+
+.minimal-select-wrap.is-open .minimal-select--trigger {
+  background: #ffffff;
+  border-color: var(--rose);
+  box-shadow: 0 0 0 3px rgba(214, 139, 150, 0.14);
+}
+
+.minimal-select__value {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .minimal-select-icon {
@@ -3265,6 +3295,71 @@ body.is-locked .mobile-bottom-bar {
   display: flex;
   align-items: center;
   pointer-events: none;
+  transition: transform 180ms var(--ease-out), color 180ms ease;
+}
+
+.minimal-select-wrap.is-open .minimal-select-icon {
+  transform: translateY(-50%) rotate(180deg);
+  color: var(--rose-deep);
+}
+
+.minimal-select-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 40;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  background: #ffffff;
+  border: 1px solid rgba(214, 138, 149, 0.34);
+  border-radius: 14px;
+  box-shadow: 0 14px 30px -8px rgba(42, 43, 47, 0.16);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  animation: fieldReveal 150ms var(--ease-out);
+}
+
+.minimal-select-option {
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 12px;
+  border-radius: 9px;
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.4;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+  transition: background-color 140ms ease, color 140ms ease;
+}
+
+.minimal-select-option:hover,
+.minimal-select-option:focus-visible {
+  background: rgba(246, 230, 233, 0.45);
+  color: var(--ink);
+  outline: none;
+}
+
+.minimal-select-option.is-selected {
+  background: rgba(214, 139, 150, 0.16);
+  color: var(--rose-deep);
+  font-weight: 600;
+}
+
+.minimal-select-option__check {
+  display: inline-flex;
+  align-items: center;
+  color: var(--rose-deep);
+  flex-shrink: 0;
 }
 
 @keyframes fieldReveal {
@@ -4265,7 +4360,7 @@ body.is-locked .mobile-bottom-bar {
 
   .about__pet {
     top: auto;
-    bottom: 36px;
+    bottom: 8px;
     left: auto;
     right: -12px;
     width: 80px;
@@ -4732,7 +4827,7 @@ body.is-locked .mobile-bottom-bar {
 
   /* ---------- Countdown Mobile ---------- */
   .countdown-section {
-    padding-block: 48px 44px;
+    padding-block: 52px 56px;
   }
 
   .countdown-open {

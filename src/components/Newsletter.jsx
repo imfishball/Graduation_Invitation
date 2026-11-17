@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import confetti from 'canvas-confetti'
 import { INITIAL_GUESTBOOK, NEWSLETTER } from '../data'
 import { useInvitation } from '../invitationContext'
@@ -43,6 +43,8 @@ export default function Newsletter() {
   const [name, setName] = useState('')
   const [role, setRole] = useState(NEWSLETTER.roles[0])
   const [customRole, setCustomRole] = useState('')
+  const [roleDropdownOpen, setRoleDropdownOpen] = useState(false)
+  const roleDropdownRef = useRef(null)
   const [attendance, setAttendance] = useState('attending') // attending | remote
   const [noteColor, setNoteColor] = useState(NEWSLETTER.noteColors[0].id)
   const [message, setMessage] = useState('')
@@ -113,7 +115,41 @@ export default function Newsletter() {
   useEffect(() => {
     setStatus((prev) => (prev === 'error' ? 'idle' : prev))
     setErrorMsg('')
+    setRoleDropdownOpen(false)
   }, [showIdentityFields])
+
+  // Đóng dropdown chọn vai vế khi bấm ra ngoài hoặc nhấn Escape
+  useEffect(() => {
+    if (!roleDropdownOpen) return undefined
+    const handlePointerDown = (e) => {
+      if (roleDropdownRef.current && !roleDropdownRef.current.contains(e.target)) {
+        setRoleDropdownOpen(false)
+      }
+    }
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setRoleDropdownOpen(false)
+      }
+    }
+    document.addEventListener('pointerdown', handlePointerDown)
+    window.addEventListener('keydown', handleKeyDown)
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown)
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [roleDropdownOpen])
+
+  const handleSelectRole = (nextRole) => {
+    setRole(nextRole)
+    setRoleDropdownOpen(false)
+    if (nextRole !== 'Khác') {
+      setCustomRole('')
+    } else {
+      requestAnimationFrame(() => {
+        document.getElementById('guest-custom-role')?.focus()
+      })
+    }
+  }
 
   // Khóa cuộn trang & hỗ trợ phím Escape khi mở xem chi tiết tờ note
   useEffect(() => {
@@ -345,36 +381,80 @@ export default function Newsletter() {
                     </div>
 
                     <div className="minimal-field">
-                      <label className="minimal-label" htmlFor="guest-role">
+                      <label className="minimal-label" id="guest-role-label" htmlFor="guest-role">
                         {copy.newsletter.roleLabel || 'Bạn đến với Mai là'}
                       </label>
-                      <div className="minimal-select-wrap">
-                        <select
+                      <div
+                        className={`minimal-select-wrap${roleDropdownOpen ? ' is-open' : ''}`}
+                        ref={roleDropdownRef}
+                      >
+                        <button
                           id="guest-role"
-                          className="minimal-input minimal-select"
-                          value={role}
-                          onChange={(e) => {
-                            const nextRole = e.target.value
-                            setRole(nextRole)
-                            if (nextRole !== 'Khác') {
-                              setCustomRole('')
-                            } else {
-                              requestAnimationFrame(() => {
-                                document.getElementById('guest-custom-role')?.focus()
-                              })
+                          type="button"
+                          className="minimal-input minimal-select minimal-select--trigger"
+                          role="combobox"
+                          aria-haspopup="listbox"
+                          aria-expanded={roleDropdownOpen}
+                          aria-controls="guest-role-listbox"
+                          aria-labelledby="guest-role-label"
+                          disabled={status === 'submitting'}
+                          onClick={() => setRoleDropdownOpen((prev) => !prev)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+                              e.preventDefault()
+                              if (!roleDropdownOpen) {
+                                setRoleDropdownOpen(true)
+                                return
+                              }
+                              const idx = NEWSLETTER.roles.indexOf(role)
+                              const delta = e.key === 'ArrowDown' ? 1 : -1
+                              const next =
+                                NEWSLETTER.roles[
+                                  (idx + delta + NEWSLETTER.roles.length) % NEWSLETTER.roles.length
+                                ]
+                              handleSelectRole(next)
                             }
                           }}
-                          disabled={status === 'submitting'}
                         >
-                          {NEWSLETTER.roles.map((r) => (
-                            <option key={r} value={r}>
-                              {r}
-                            </option>
-                          ))}
-                        </select>
-                        <span className="minimal-select-icon">
-                          <ChevronDownIcon size={16} />
-                        </span>
+                          <span className="minimal-select__value">{role}</span>
+                          <span className="minimal-select-icon" aria-hidden="true">
+                            <ChevronDownIcon size={16} />
+                          </span>
+                        </button>
+
+                        {roleDropdownOpen && (
+                          <ul
+                            id="guest-role-listbox"
+                            className="minimal-select-menu"
+                            role="listbox"
+                            aria-labelledby="guest-role-label"
+                          >
+                            {NEWSLETTER.roles.map((r) => {
+                              const isSelected = r === role
+                              return (
+                                <li key={r} role="presentation">
+                                  <button
+                                    type="button"
+                                    role="option"
+                                    aria-selected={isSelected}
+                                    className={`minimal-select-option${isSelected ? ' is-selected' : ''}`}
+                                    onClick={() => handleSelectRole(r)}
+                                  >
+                                    <span>{r}</span>
+                                    {isSelected && (
+                                      <span
+                                        className="minimal-select-option__check"
+                                        aria-hidden="true"
+                                      >
+                                        <CheckIcon size={14} />
+                                      </span>
+                                    )}
+                                  </button>
+                                </li>
+                              )
+                            })}
+                          </ul>
+                        )}
                       </div>
 
                       {role === 'Khác' && (
@@ -383,7 +463,7 @@ export default function Newsletter() {
                           className="minimal-input minimal-input--custom-role"
                           type="text"
                           maxLength={50}
-                          placeholder="Ví dụ: Đồng nghiệp, Bạn cấp 3..."
+                          placeholder="Đồng nghiệp, Ăm chã húi, ..."
                           aria-label="Nhập mối quan hệ của bạn với Mai"
                           value={customRole}
                           onChange={(e) => setCustomRole(e.target.value)}

@@ -20,13 +20,13 @@ import {
   useSmoothScroll,
 } from './hooks'
 
-const SECTION_IDS = ['top', 'countdown', 'about', 'contact', 'adventures', 'instagram']
+const SECTION_IDS = ['top', 'about', 'countdown', 'contact', 'adventures', 'instagram']
 
 /** Các section không có mục nav riêng sẽ dùng lại mục gần nhất */
 const NAV_TARGET = {
   top: 'top',
-  countdown: 'top',
   about: 'about',
+  countdown: 'countdown',
   contact: 'contact',
   adventures: 'adventures',
   instagram: 'instagram',
@@ -128,8 +128,8 @@ function AppContent() {
 
         <main id="main">
           <Hero entered={coverState !== 'open'} />
-          <CountdownTimer />
           <About />
+          <CountdownTimer />
           <Newsletter />
           <Adventures />
           <Instagram />
