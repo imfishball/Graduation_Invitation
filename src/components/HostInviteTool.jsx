@@ -17,6 +17,7 @@ import {
 } from '../personalization'
 import {
   ArrowLeftIcon,
+  CheckCircleIcon,
   CheckIcon,
   CopyIcon,
   EditPenIcon,
@@ -24,8 +25,10 @@ import {
   EyeOffIcon,
   LinkIcon,
   LockIcon,
+  MailIcon,
   RefreshIcon,
   TrashIcon,
+  UsersIcon,
   XIcon,
 } from './Icons'
 
@@ -324,7 +327,10 @@ function HostStudioWorkspace({ onLockSession }) {
   const [editingField, setEditingField] = useState(null) // { key, value } | null
   const [customSms, setCustomSms] = useState(null) // null = dùng SMS gợi ý theo vai vế
   const [copiedType, setCopiedType] = useState('') // 'link' | 'sms' | id | ''
-  const [activeTab, setActiveTab] = useState('links') // 'links' | 'notes'
+  const [activeTab, setActiveTab] = useState('links') // 'links' | 'guests' | 'notes'
+  const [guestFilter, setGuestFilter] = useState('attending') // 'attending' | 'all' | 'remote'
+  const [guestQuery, setGuestQuery] = useState('')
+  const [copiedRoster, setCopiedRoster] = useState(false)
   const [notesList, setNotesList] = useState(() => buildInitialGuestbook(INITIAL_GUESTBOOK))
   const [notesLoading, setNotesLoading] = useState(false)
   const [notesSyncMeta, setNotesSyncMeta] = useState({ shared: true, backend: 'unknown' })
@@ -479,6 +485,62 @@ function HostStudioWorkspace({ onLockSession }) {
       return haystack.includes(q)
     })
   }, [notesList, notesQuery])
+
+  const attendingGuests = useMemo(() => {
+    return notesList.filter((item) => item?.attendance !== 'remote')
+  }, [notesList])
+
+  const remoteGuests = useMemo(() => {
+    return notesList.filter((item) => item?.attendance === 'remote')
+  }, [notesList])
+
+  const displayedGuests = useMemo(() => {
+    let list = notesList
+    if (guestFilter === 'attending') {
+      list = list.filter((g) => g?.attendance !== 'remote')
+    } else if (guestFilter === 'remote') {
+      list = list.filter((g) => g?.attendance === 'remote')
+    }
+
+    const q = guestQuery.trim().toLowerCase()
+    if (!q) return list
+
+    return list.filter((g) => {
+      const haystack = `${g.name || ''} ${g.role || ''} ${g.message || ''}`.toLowerCase()
+      return haystack.includes(q)
+    })
+  }, [notesList, guestFilter, guestQuery])
+
+  const handleCopyGuestRoster = async () => {
+    const attendees = notesList.filter((n) => n?.attendance !== 'remote')
+    if (attendees.length === 0) {
+      setNotesNotice('Chưa có khách nào xác nhận tham dự để sao chép.')
+      return
+    }
+
+    const lines = [
+      `🎓 DANH SÁCH KHÁCH XÁC NHẬN THAM DỰ LỄ TỐT NGHIỆP — NGUYỄN VŨ XUÂN MAI`,
+      `⏰ Thời gian: Thứ Sáu, 27/11/2026 (15:00 – 17:00)`,
+      `📍 Địa điểm: Trường Đại học Công nghệ Thông tin - ĐHQG TPHCM`,
+      ``,
+      `----------------------------------------`,
+      ...attendees.map((g, idx) => {
+        const roleStr = g.role ? ` (${g.role})` : ''
+        const timeStr = g.time ? ` · ${g.time}` : ''
+        return `${idx + 1}. ${g.name}${roleStr}${timeStr}`
+      }),
+      `----------------------------------------`,
+      `Tổng cộng: ${attendees.length} khách xác nhận tham dự.`,
+    ]
+
+    const text = lines.join('\n')
+    const ok = await copyToClipboard(text)
+    if (ok) {
+      setCopiedRoster(true)
+      setTimeout(() => setCopiedRoster(false), 2400)
+      setNotesNotice(`Đã sao chép danh sách ${attendees.length} khách tham dự vào clipboard!`)
+    }
+  }
 
   const cleanOverrides = useMemo(() => sanitizeOverrides(overrides), [overrides])
 
@@ -683,11 +745,27 @@ function HostStudioWorkspace({ onLockSession }) {
           <div>
             <p className="host-studio__script">công cụ riêng của Xuân Mai</p>
             <h2 className="host-studio__title" id="host-studio-title">
-              Tạo Link Thiệp Cá Nhân Hóa
+              {activeTab === 'guests'
+                ? 'Danh Sách Khách Tham Dự'
+                : activeTab === 'notes'
+                  ? 'Quản Lý Lời Chúc & Tờ Note'
+                  : 'Tạo Link Thiệp Cá Nhân Hóa'}
             </h2>
             <p className="host-studio__sub">
-              Mỗi link dùng mã gọn <code>?i=...</code> để không lộ tên hay phân loại vai vế trên
-              đường dẫn; khi khách mở thiệp, địa chỉ trình duyệt sẽ tự làm sạch về trang gốc.
+              {activeTab === 'guests' ? (
+                <>
+                  Theo dõi thời gian thực danh sách khách xác nhận đến dự trực tiếp tại UIT (15:00 – 17:00, 27/11) và những lời chúc gửi từ xa.
+                </>
+              ) : activeTab === 'notes' ? (
+                <>
+                  Xem, kiểm duyệt, làm mới và xóa các tờ note không phù hợp trên bảng lời chúc thiệp mời.
+                </>
+              ) : (
+                <>
+                  Mỗi link dùng mã gọn <code>?i=...</code> để không lộ tên hay phân loại vai vế trên
+                  đường dẫn; khi khách mở thiệp, địa chỉ trình duyệt sẽ tự làm sạch về trang gốc.
+                </>
+              )}
             </p>
           </div>
 
@@ -724,6 +802,22 @@ function HostStudioWorkspace({ onLockSession }) {
             onClick={() => setActiveTab('links')}
           >
             <span>Tạo Link Cá Nhân Hóa</span>
+          </button>
+
+          <button
+            type="button"
+            role="tab"
+            id="host-tab-guests"
+            aria-selected={activeTab === 'guests'}
+            className={`host-studio__tab${activeTab === 'guests' ? ' is-active' : ''}`}
+            onClick={() => {
+              setActiveTab('guests')
+              loadManagedNotes({ silent: false })
+            }}
+          >
+            <UsersIcon size={14} />
+            <span>Khách Tham Dự</span>
+            <span className="host-studio__tab-count">{attendingGuests.length}</span>
           </button>
 
           <button
@@ -1124,6 +1218,253 @@ function HostStudioWorkspace({ onLockSession }) {
             )}
           </div>
         </div>
+        ) : activeTab === 'guests' ? (
+          <div
+            className="host-guests"
+            role="tabpanel"
+            aria-labelledby="host-tab-guests"
+          >
+            {/* 1. Các thẻ chỉ số thống kê */}
+            <div className="host-guests__metrics">
+              <div className="host-metric-card host-metric-card--primary">
+                <div className="host-metric-card__icon" aria-hidden="true">
+                  <CheckCircleIcon size={22} />
+                </div>
+                <div className="host-metric-card__body">
+                  <span className="host-metric-card__val">{attendingGuests.length}</span>
+                  <strong className="host-metric-card__label">Xác nhận tham dự trực tiếp</strong>
+                  <span className="host-metric-card__sub">Thứ Sáu 27/11 (15:00 – 17:00) • UIT</span>
+                </div>
+              </div>
+
+              <div className="host-metric-card">
+                <div className="host-metric-card__icon" aria-hidden="true">
+                  <MailIcon size={20} />
+                </div>
+                <div className="host-metric-card__body">
+                  <span className="host-metric-card__val">{remoteGuests.length}</span>
+                  <strong className="host-metric-card__label">Gửi lời chúc từ xa</strong>
+                  <span className="host-metric-card__sub">Không thể đến dự trực tiếp</span>
+                </div>
+              </div>
+
+              <div className="host-metric-card">
+                <div className="host-metric-card__icon" aria-hidden="true">
+                  <UsersIcon size={20} />
+                </div>
+                <div className="host-metric-card__body">
+                  <span className="host-metric-card__val">{notesList.length}</span>
+                  <strong className="host-metric-card__label">Tổng lượt phản hồi</strong>
+                  <span className="host-metric-card__sub">Lưu trên tường lời chúc</span>
+                </div>
+              </div>
+            </div>
+
+            {/* 2. Thanh công cụ tìm kiếm, lọc & sao chép */}
+            <div className="host-guests__toolbar">
+              <div className="host-guests__filter-group" role="group" aria-label="Lọc danh sách khách">
+                <button
+                  type="button"
+                  className={`host-filter-chip${guestFilter === 'attending' ? ' is-active' : ''}`}
+                  onClick={() => setGuestFilter('attending')}
+                >
+                  <CheckCircleIcon size={13} />
+                  <span>Sẽ tham dự ({attendingGuests.length})</span>
+                </button>
+                <button
+                  type="button"
+                  className={`host-filter-chip${guestFilter === 'all' ? ' is-active' : ''}`}
+                  onClick={() => setGuestFilter('all')}
+                >
+                  <span>Tất cả ({notesList.length})</span>
+                </button>
+                {remoteGuests.length > 0 && (
+                  <button
+                    type="button"
+                    className={`host-filter-chip${guestFilter === 'remote' ? ' is-active' : ''}`}
+                    onClick={() => setGuestFilter('remote')}
+                  >
+                    <MailIcon size={13} />
+                    <span>Từ xa ({remoteGuests.length})</span>
+                  </button>
+                )}
+              </div>
+
+              <div className="host-guests__actions">
+                <input
+                  type="search"
+                  className="minimal-input host-guests__search"
+                  placeholder="Tìm theo tên hoặc vai vế..."
+                  aria-label="Tìm kiếm trong danh sách khách"
+                  value={guestQuery}
+                  onChange={(e) => setGuestQuery(e.target.value)}
+                />
+
+                <button
+                  type="button"
+                  className="pill pill--rose host-guests__copy-btn"
+                  onClick={handleCopyGuestRoster}
+                  title="Sao chép toàn bộ danh sách khách tham dự để gửi Zalo hoặc lưu trữ"
+                >
+                  <CopyIcon size={14} />
+                  <span>{copiedRoster ? 'Đã sao chép!' : 'Chép danh sách'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  className="pill pill--light host-notes__refresh"
+                  onClick={() => loadManagedNotes({ silent: false })}
+                  disabled={notesLoading}
+                  title="Đồng bộ danh sách mới nhất từ máy chủ"
+                >
+                  <RefreshIcon size={14} />
+                  <span>{notesLoading ? 'Đang tải...' : 'Làm mới'}</span>
+                </button>
+              </div>
+            </div>
+
+            {notesError && (
+              <p className="wishes-feedback wishes-feedback--error" role="status">
+                {notesError}
+              </p>
+            )}
+
+            {notesNotice && (
+              <div className="wishes-feedback wishes-feedback--success" role="status">
+                <CheckIcon size={16} />
+                <span>{notesNotice}</span>
+              </div>
+            )}
+
+            {/* 3. Danh sách khách */}
+            {displayedGuests.length === 0 ? (
+              <div className="host-notes__empty" role="status">
+                {notesList.length === 0
+                  ? 'Chưa có khách nào gửi lời chúc hoặc xác nhận tham dự.'
+                  : guestFilter === 'attending'
+                  ? 'Hiện chưa có khách nào xác nhận tham dự trực tiếp.'
+                  : 'Không tìm thấy khách nào khớp với từ khóa tìm kiếm.'}
+              </div>
+            ) : (
+              <ul className="host-guests__list">
+                {displayedGuests.map((guest, idx) => {
+                  const isAttending = guest.attendance !== 'remote'
+                  const colorInfo =
+                    NEWSLETTER.noteColors.find((c) => c.id === guest.noteColor) ||
+                    NEWSLETTER.noteColors[idx % NEWSLETTER.noteColors.length]
+                  const initialLetter = guest.name ? guest.name.trim().charAt(0).toUpperCase() : 'K'
+                  const isConfirming = confirmDeleteId === guest.id
+                  const isDeleting = deletingId === guest.id
+
+                  return (
+                    <li
+                      key={guest.id}
+                      className={`host-guest-card${!isAttending ? ' is-remote' : ''}${isConfirming ? ' is-confirming' : ''}`}
+                    >
+                      <div className="host-guest-card__main">
+                        <div
+                          className="host-guest-card__avatar"
+                          style={{ backgroundColor: colorInfo.swatch }}
+                          aria-hidden="true"
+                        >
+                          <span>{initialLetter}</span>
+                        </div>
+
+                        <div className="host-guest-card__details">
+                          <div className="host-guest-card__header-line">
+                            <strong className="host-guest-card__name">{guest.name}</strong>
+
+                            {guest.role && (
+                              <span className="host-guest-card__role">{guest.role}</span>
+                            )}
+
+                            <span
+                              className={`host-guest-card__badge ${isAttending ? 'is-attending' : 'is-remote'}`}
+                            >
+                              {isAttending ? (
+                                <>
+                                  <CheckCircleIcon size={12} />
+                                  <span>Sẽ đến dự lễ (UIT)</span>
+                                </>
+                              ) : (
+                                <>
+                                  <MailIcon size={12} />
+                                  <span>Gửi lời chúc từ xa</span>
+                                </>
+                              )}
+                            </span>
+
+                            {guest.time && (
+                              <span className="host-guest-card__time">{guest.time}</span>
+                            )}
+                          </div>
+
+                          {guest.message && (
+                            <p className="host-guest-card__msg">
+                              <span className="host-guest-card__quote" aria-hidden="true">
+                                “
+                              </span>
+                              {guest.message}
+                              <span className="host-guest-card__quote" aria-hidden="true">
+                                ”
+                              </span>
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="host-guest-card__actions">
+                        <button
+                          type="button"
+                          className="host-note-card__btn host-guest-card__btn-view"
+                          onClick={() => {
+                            setActiveTab('notes')
+                            setNotesQuery(guest.name)
+                          }}
+                          title="Xem tờ note tương ứng"
+                        >
+                          <EyeIcon size={13} />
+                          <span>Xem note</span>
+                        </button>
+
+                        {isConfirming ? (
+                          <>
+                            <button
+                              type="button"
+                              className="host-note-card__btn host-note-card__btn--confirm"
+                              onClick={() => handleDeleteNote(guest)}
+                              disabled={isDeleting}
+                            >
+                              <TrashIcon size={13} />
+                              <span>{isDeleting ? 'Đang xóa...' : 'Xóa'}</span>
+                            </button>
+                            <button
+                              type="button"
+                              className="host-note-card__btn host-note-card__btn--cancel"
+                              onClick={() => setConfirmDeleteId(null)}
+                              disabled={isDeleting}
+                            >
+                              Hủy
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            type="button"
+                            className="host-note-card__btn host-note-card__btn--del"
+                            onClick={() => setConfirmDeleteId(guest.id)}
+                            disabled={Boolean(deletingId)}
+                            title="Xóa phản hồi này"
+                          >
+                            <TrashIcon size={13} />
+                          </button>
+                        )}
+                      </div>
+                    </li>
+                  )
+                })}
+              </ul>
+            )}
+          </div>
         ) : (
           <div
             className="host-notes"

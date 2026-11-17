@@ -44,14 +44,14 @@ export default function About() {
           <figure className="about__frame">
             <img
               className="about__photo"
-              src="/assets/sophie.jpg"
-              alt="Xuân Mai rạng rỡ trong trang phục tốt nghiệp ôm bó hoa hồng phấn tại khuôn viên UIT"
+              src="/assets/about-mai.jpg"
+              alt="Nguyễn Vũ Xuân Mai duyên dáng trong lễ phục cử nhân UIT, đội mũ tốt nghiệp và dải băng tốt nghiệp UIT"
               width="1200"
               height="1283"
               loading="lazy"
               decoding="async"
             />
-            <figcaption className="about__caption">It's me</figcaption>
+            <figcaption className="about__caption">It's me!</figcaption>
           </figure>
 
           <div className="about__pet">

@@ -91,8 +91,8 @@ export const POSTS = [
     location: 'Tòa Nhà Chính • UIT',
     title: 'Ngước Nhìn Mái Trường UIT',
     excerpt: 'Tòa nhà kính và hàng cờ bay trong nắng nhẹ, gói trọn bốn năm thanh xuân rực rỡ.',
-    image: '/assets/post-uit-night.jpg',
-    alt: 'Biểu tượng UIT — University of Information Technology phát sáng ấm áp trong khuôn viên trường buổi tối',
+    image: '/assets/post-uit-building.jpg',
+    alt: 'Tòa nhà kính Trường Đại học Công nghệ Thông tin UIT vươn cao rực rỡ giữa tán cây xanh và cờ Tổ quốc',
   },
 ]
 
@@ -110,6 +110,13 @@ export const INSTAGRAM = {
       width: 1200,
       height: 1200,
       alt: 'Xuân Mai trong lễ phục cử nhân, đội mũ tốt nghiệp cùng dải băng UIT K17 trên bậc thang trường',
+    },
+    {
+      location: 'Rạng rỡ ngày lễ tốt nghiệp',
+      image: '/assets/ig-mai-roses.jpg',
+      width: 1500,
+      height: 1000,
+      alt: 'Xuân Mai rạng rỡ ôm bó hoa hồng phấn cùng dải băng cử nhân K17 trước biểu tượng Trường ĐH CNTT (UIT)',
     },
     {
       location: 'Cùng nhau bước lên bậc thang mới',
