@@ -105,17 +105,6 @@ export default function Hero({ entered = true }) {
               </>
             )}
           </p>
-
-          <div className="hero__actions">
-            <a className="pill pill--rose hero__action-btn hero__action-btn--primary" href="#contact">
-              <span className="hero-cta-full">{HERO.cta.primary}</span>
-              <span className="hero-cta-short">Gửi lời chúc</span>
-            </a>
-            <a className="pill pill--light hero__action-btn hero__action-btn--secondary" href="#countdown">
-              <span className="hero-cta-full">{HERO.cta.secondary}</span>
-              <span className="hero-cta-short">{HERO.cta.secondaryShort}</span>
-            </a>
-          </div>
         </div>
 
         <div className="hero__bottom">

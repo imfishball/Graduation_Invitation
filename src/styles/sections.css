@@ -4792,7 +4792,7 @@ body.is-locked .mobile-bottom-bar {
     color: #f5ede1;
     text-shadow: 0 1px 12px rgba(10, 18, 32, 0.42);
     max-width: 305px;
-    margin: 0 0 18px 0;
+    margin: 0;
     text-wrap: pretty;
   }
 
