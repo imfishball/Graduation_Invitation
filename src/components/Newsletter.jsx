@@ -70,6 +70,7 @@ export default function Newsletter() {
       return {}
     }
   })
+  const likingRef = useRef({})
 
   // Tải bảng giấy note dùng chung từ file JSON / KV / Gist qua /api/notes
   useEffect(() => {
@@ -475,16 +476,70 @@ export default function Newsletter() {
     }
   }
 
-  const toggleLike = (id) => {
-    setLikedIds((prev) => {
-      const next = { ...prev, [id]: !prev[id] }
-      try {
-        localStorage.setItem(LIKES_STORAGE_KEY, JSON.stringify(next))
-      } catch {
-        // ignore
+  const toggleLike = async (id) => {
+    const idKey = String(id || '')
+    if (!idKey || likingRef.current[idKey]) return
+    likingRef.current[idKey] = true
+
+    const wasLiked = Boolean(likedIds[idKey])
+    const nextLiked = !wasLiked
+    const delta = nextLiked ? 1 : -1
+
+    // Cập nhật giao diện ngay lập tức (Optimistic UI)
+    const nextLikedMap = { ...likedIds, [idKey]: nextLiked }
+    setLikedIds(nextLikedMap)
+    try {
+      localStorage.setItem(LIKES_STORAGE_KEY, JSON.stringify(nextLikedMap))
+    } catch {
+      // ignore
+    }
+
+    const applyOptimisticCount = (item) => {
+      if (String(item?.id || '') !== idKey) return item
+      const base = Math.max(0, Number(item.likes) || 0)
+      return { ...item, likes: Math.max(0, base + delta) }
+    }
+
+    setGuestbook((prev) => prev.map(applyOptimisticCount))
+    setSelectedNote((prev) => (prev ? applyOptimisticCount(prev) : null))
+
+    try {
+      const res = await fetch('/api/notes', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'like', id: idKey, delta }),
+      })
+      const data = await res.json().catch(() => null)
+
+      if (res.ok && data?.ok && data.note) {
+        if (data.shared === false) {
+          updateNoteInLocalFallback(data.note)
+        }
+        const nextList =
+          data.shared === false
+            ? mergeServerNotes(data)
+            : Array.isArray(data.notes)
+              ? data.notes
+              : null
+
+        if (nextList) {
+          setGuestbook(nextList)
+          dispatchNotesSync({ notes: nextList, shared: data.shared })
+        }
+        setSelectedNote((prev) =>
+          prev && String(prev.id) === idKey
+            ? { ...prev, likes: Math.max(0, Number(data.note.likes) || 0) }
+            : prev
+        )
+      } else if (res.status === 404 && Array.isArray(data?.notes)) {
+        setGuestbook(data.notes)
+        dispatchNotesSync({ notes: data.notes, deletedId: idKey })
       }
-      return next
-    })
+    } catch {
+      // Nếu mất mạng hoặc offline fallback, giữ nguyên trạng thái đã cập nhật cục bộ
+    } finally {
+      delete likingRef.current[idKey]
+    }
   }
 
   return (
@@ -776,6 +831,7 @@ export default function Newsletter() {
                     <div className="notes-grid">
                       {guestbook.map((entry, idx) => {
                       const isLiked = !!likedIds[entry.id]
+                      const likeCount = Math.max(0, Number(entry.likes) || 0)
                       const isFresh = entry.id === newestId
                       const isMine = Boolean(ownedTokens[entry.id])
                       const colorId =
@@ -868,20 +924,24 @@ export default function Newsletter() {
 
                               <button
                                 type="button"
-                                className={`minimal-wish__like ${isLiked ? 'is-liked' : ''}`}
+                                className={`minimal-wish__like ${isLiked ? 'is-liked' : ''}${likeCount > 0 ? ' has-count' : ''}`}
                                 onClick={(e) => {
                                   e.stopPropagation()
                                   toggleLike(entry.id)
                                 }}
                                 aria-label={
                                   isLiked
-                                    ? `Bỏ thả tim tờ note của ${entry.name}`
-                                    : `Thả tim tờ note của ${entry.name}`
+                                    ? `Bỏ thả tim tờ note của ${entry.name} (${likeCount} lượt tim)`
+                                    : `Thả tim tờ note của ${entry.name} (${likeCount} lượt tim)`
                                 }
                                 aria-pressed={isLiked}
                               >
                                 <HeartIcon size={13} />
-                                {!isLiked && !isMine && <span>Thả tim</span>}
+                                {likeCount > 0 ? (
+                                  <span className="minimal-wish__like-count">{likeCount}</span>
+                                ) : (
+                                  !isLiked && !isMine && <span>Thả tim</span>
+                                )}
                               </button>
                             </div>
                           </footer>
@@ -1123,20 +1183,30 @@ export default function Newsletter() {
                         </button>
                       )}
 
-                      <button
-                        type="button"
-                        className={`minimal-wish__like ${likedIds[selectedNote.id] ? 'is-liked' : ''}`}
-                        onClick={() => toggleLike(selectedNote.id)}
-                        aria-label={
-                          likedIds[selectedNote.id]
-                            ? `Bỏ thả tim tờ note của ${selectedNote.name}`
-                            : `Thả tim tờ note của ${selectedNote.name}`
-                        }
-                        aria-pressed={!!likedIds[selectedNote.id]}
-                      >
-                        <HeartIcon size={15} />
-                        {!likedIds[selectedNote.id] && <span>Thả tim</span>}
-                      </button>
+                      {(() => {
+                        const modalLiked = Boolean(likedIds[selectedNote.id])
+                        const modalLikes = Math.max(0, Number(selectedNote.likes) || 0)
+                        return (
+                          <button
+                            type="button"
+                            className={`minimal-wish__like ${modalLiked ? 'is-liked' : ''}${modalLikes > 0 ? ' has-count' : ''}`}
+                            onClick={() => toggleLike(selectedNote.id)}
+                            aria-label={
+                              modalLiked
+                                ? `Bỏ thả tim tờ note của ${selectedNote.name} (${modalLikes} lượt tim)`
+                                : `Thả tim tờ note của ${selectedNote.name} (${modalLikes} lượt tim)`
+                            }
+                            aria-pressed={modalLiked}
+                          >
+                            <HeartIcon size={15} />
+                            {modalLikes > 0 ? (
+                              <span className="minimal-wish__like-count">{modalLikes}</span>
+                            ) : (
+                              !modalLiked && <span>Thả tim</span>
+                            )}
+                          </button>
+                        )
+                      })()}
                     </div>
                   </footer>
                 </>

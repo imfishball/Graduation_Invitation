@@ -250,7 +250,10 @@ function verifyEditToken(providedToken, storedHash) {
 function toPublicNote(note) {
   if (!note || typeof note !== 'object') return note
   const { editTokenHash: _hidden, ...publicFields } = note
-  return publicFields
+  const safeLikes = Number.isFinite(Number(publicFields.likes))
+    ? Math.max(0, Math.floor(Number(publicFields.likes)))
+    : 0
+  return { ...publicFields, likes: safeLikes }
 }
 
 function toPublicNotes(list) {
@@ -287,6 +290,7 @@ function buildNewNote(body, existingCount) {
       fastener: FASTENERS[offset],
       doodle: DOODLES[offset],
       message: cleanMsg,
+      likes: 0,
       time: formatVietnamTime(),
       createdAt: new Date().toISOString(),
       editTokenHash: hashEditToken(editToken),
@@ -483,6 +487,79 @@ async function updateNoteWithMeta(body) {
   return outcome
 }
 
+async function toggleLikeWithMeta(body) {
+  const cleanId = typeof body?.id === 'string' ? body.id.trim().slice(0, 120) : ''
+  const rawDelta = Number(body?.delta)
+  const delta = rawDelta === 1 ? 1 : rawDelta === -1 ? -1 : 0
+
+  if (!cleanId) {
+    return { validationError: 'Thiếu mã tờ note cần thả tim.' }
+  }
+  if (!delta) {
+    return { validationError: 'Giá trị thả tim không hợp lệ.' }
+  }
+
+  const applyLike = (list) => {
+    const idx = list.findIndex((item) => String(item?.id || '') === cleanId)
+    if (idx === -1) return { notFound: true }
+
+    const existing = list[idx]
+    const prevLikes = Number.isFinite(Number(existing?.likes))
+      ? Math.max(0, Math.floor(Number(existing.likes)))
+      : 0
+    const nextLikes = Math.min(999999, Math.max(0, prevLikes + delta))
+    const updatedNote = {
+      ...existing,
+      likes: nextLikes,
+    }
+
+    const nextList = [...list]
+    nextList[idx] = updatedNote
+    return { note: updatedNote, notes: nextList }
+  }
+
+  const kv = getKvConfig()
+  if (kv) {
+    const current = await kvReadNotes(kv)
+    const res = applyLike(current)
+    if (res.notFound) return { notFound: true, notes: toPublicNotes(current), backend: 'kv', shared: true }
+    await kvWriteNotes(kv, res.notes)
+    return { note: toPublicNote(res.note), likes: res.note.likes, notes: toPublicNotes(res.notes), backend: 'kv', shared: true }
+  }
+
+  const gist = getGistConfig()
+  if (gist) {
+    const current = await gistReadNotes(gist)
+    const res = applyLike(current)
+    if (res.notFound) return { notFound: true, notes: toPublicNotes(current), backend: 'gist', shared: true }
+    await gistWriteNotes(gist, res.notes)
+    return { note: toPublicNote(res.note), likes: res.note.likes, notes: toPublicNotes(res.notes), backend: 'gist', shared: true }
+  }
+
+  if (process.env.VERCEL) {
+    const current = await readLocalNotesFile()
+    const res = applyLike(current)
+    if (res.notFound) return { notFound: true, notes: toPublicNotes(current), backend: 'readonly', shared: false }
+    return { note: toPublicNote(res.note), likes: res.note.likes, notes: toPublicNotes(res.notes), backend: 'readonly', shared: false }
+  }
+
+  let outcome
+  const task = fileWriteQueue.then(async () => {
+    const current = await readLocalNotesFile()
+    const res = applyLike(current)
+    if (res.notFound) {
+      outcome = { notFound: true, notes: toPublicNotes(current), backend: 'file', shared: true }
+      return
+    }
+    await writeLocalNotesFile(res.notes)
+    outcome = { note: toPublicNote(res.note), likes: res.note.likes, notes: toPublicNotes(res.notes), backend: 'file', shared: true }
+  })
+
+  fileWriteQueue = task.catch(() => {})
+  await task
+  return outcome
+}
+
 async function deleteNoteWithMeta(noteId) {
   const cleanId = typeof noteId === 'string' ? noteId.trim().slice(0, 120) : ''
   if (!cleanId) {
@@ -594,7 +671,10 @@ export default async function handler(req, res) {
     }
 
     try {
-      const result = await updateNoteWithMeta(body)
+      const result =
+        body?.action === 'like'
+          ? await toggleLikeWithMeta(body)
+          : await updateNoteWithMeta(body)
       if (result.validationError) {
         return sendJson(res, 400, { ok: false, error: result.validationError })
       }
