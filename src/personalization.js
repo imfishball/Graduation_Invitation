@@ -449,18 +449,19 @@ export function buildPersonalizedCopy(invite) {
 }
 
 const DEFAULT_FOOTER_MESSAGE =
-  'Bốn năm đại học là hành trình của tri thức, của những nỗ lực không ngừng và của biết bao yêu thương nâng đỡ. Xuân Mai xin gửi lời cảm ơn chân thành nhất đến gia đình, thầy cô và bạn bè — những người đã luôn ở bên, và xin cảm ơn mọi người đã dành thời gian đến chung vui, để ngày tốt nghiệp này trở nên trọn vẹn và đáng nhớ hơn bao giờ hết.'
+  'Bốn năm đại học tại UIT là chặng đường đáng nhớ với nhiều trải nghiệm và sự trưởng thành. Xuân Mai xin gửi lời cảm ơn chân thành đến gia đình, quý Thầy Cô và bạn bè đã luôn đồng hành, hỗ trợ trong suốt thời gian qua. Rất mong được đón tiếp mọi người đến chung vui trong ngày lễ tốt nghiệp.'
 
-const ABOUT_TITLE_DEFAULT = 'Đôi Dòng Tâm Sự'
+const ABOUT_TITLE_DEFAULT = 'Đôi Dòng Chia Sẻ'
 const ABOUT_FIRST_PARAGRAPH =
-  'Bốn năm đại học tại UIT đã chính thức khép lại. Để có được cột mốc hôm nay là nhờ sự hy sinh thầm lặng của Bố Mẹ, sự dìu dắt tận tâm của Thầy Cô và sự chia sẻ ấm áp của gia đình và bạn bè.'
+  'Bốn năm đại học tại UIT đã chính thức khép lại. Để có được cột mốc hôm nay là nhờ sự quan tâm của Bố Mẹ, sự dạy bảo tận tình của quý Thầy Cô cùng sự đồng hành của gia đình và bạn bè.'
 
-function buildAboutCopy(guestCall, selfCall) {
+function buildAboutCopy(guestCall, selfCall, customSecondParagraph = '') {
   return {
     title: ABOUT_TITLE_DEFAULT,
     paragraphs: [
       ABOUT_FIRST_PARAGRAPH,
-      `Sự hiện diện hay dù chỉ là một lời chúc từ phương xa của ${guestCall} đều là món quà vô giá đối với ${selfCall}. Cảm ơn vì đã luôn là một phần thanh xuân tuyệt vời của ${selfCall}!`,
+      customSecondParagraph ||
+        `Sự hiện diện hoặc lời chúc từ phương xa của ${guestCall} là niềm vui và niềm vinh hạnh đối với ${selfCall}. Cảm ơn ${guestCall} đã luôn đồng hành cùng ${selfCall} trong thời gian qua.`,
     ],
   }
 }
@@ -486,29 +487,29 @@ function buildBaseCopy({
       customNote,
       cover: {
         prefix: 'Trân trọng kính mời',
-        suffix: 'đến chung vui cùng em trong ngày trọng đại này',
+        suffix: 'đến chung vui trong buổi lễ tốt nghiệp của em',
       },
       hero: {
         lead: 'Em',
-        description: `Thanh xuân tại UIT sắp khép lại, mở ra một hành trình mới. Mong được đón ${midCall} đến chung vui và lưu giữ khoảnh khắc đáng nhớ này cùng em.`,
+        description: `Bốn năm học tập tại UIT sắp khép lại, mở ra một chặng đường mới. Em rất mong được đón tiếp ${midCall} đến chung vui và chụp ảnh kỷ niệm cùng em.`,
       },
       countdownPillPrefix: 'Trân trọng kính mời',
       about: buildAboutCopy(midCall, 'em'),
       newsletter: {
-        subtitle: `Hãy viết đôi dòng lên tờ giấy note gửi em Mai — sự hiện diện hay lời chúc của ${midCall} đều là kỷ niệm Mai sẽ trân trọng giữ mãi.`,
+        subtitle: `Em rất mong nhận được đôi dòng lời chúc từ ${midCall} trên bảng lưu bút kỷ niệm chiều 27/11.`,
         attendanceLabel: `${hasExplicitName ? callName : 'Anh'} có tham dự buổi lễ cùng em không?`,
         attendingChoice: 'Anh sẽ tham dự',
         remoteChoice: 'Anh gửi chúc từ xa',
-        defaultAuthor: 'Anh thân mến',
+        defaultAuthor: 'Anh',
         noteTag: '',
-        placeholderMessage: 'Viết lời chúc gửi em Mai lên tờ note tại đây...',
-        errorMessage: 'Hãy viết đôi dòng lên tờ giấy note gửi đến em Mai trước khi dán nha!',
-        successMessage: `Tờ note mới đã được dán lên bảng kỷ niệm! Em Mai cảm ơn tình cảm của ${midCall} nhiều ạ.`,
+        placeholderMessage: 'Viết lời chúc gửi em Mai tại đây...',
+        errorMessage: 'Vui lòng viết lời chúc trước khi dán lên bảng lưu bút.',
+        successMessage: `Tờ note đã được dán lên bảng lưu bút. Em Mai xin cảm ơn ${midCall} ạ.`,
       },
       footer: {
-        message: `Bốn năm đại học là hành trình của tri thức, của những nỗ lực không ngừng và của biết bao yêu thương nâng đỡ. Em xin gửi lời cảm ơn chân thành nhất đến gia đình, thầy cô, bạn bè và đặc biệt cảm ơn ${midCall} đã dành thời gian đến chung vui, để ngày tốt nghiệp của em trở nên trọn vẹn và đáng nhớ hơn bao giờ hết.`,
+        message: DEFAULT_FOOTER_MESSAGE,
       },
-      inviteSms: `Em chào ${midCall}, sắp tới chiều thứ Sáu 27/11 (15:00 – 17:00) là lễ tốt nghiệp của em tại trường UIT ạ. Em trân trọng gửi ${midLower} tấm thiệp mời online này, rất mong được đón ${midLower} đến chung vui và chụp cùng em tấm ảnh kỷ niệm nhé!`,
+      inviteSms: `Em chào ${midCall}, chiều Thứ Sáu 27/11 (15:00 – 17:00) là lễ tốt nghiệp của em tại Trường ĐH Công nghệ Thông tin (UIT). Em trân trọng gửi ${midLower} thiệp mời này, rất mong được đón tiếp ${midLower} đến chung vui và chụp ảnh kỷ niệm cùng em ạ.`,
     }
   }
 
@@ -523,29 +524,29 @@ function buildBaseCopy({
       customNote,
       cover: {
         prefix: 'Trân trọng kính mời',
-        suffix: 'đến chung vui cùng em trong ngày trọng đại này',
+        suffix: 'đến chung vui trong buổi lễ tốt nghiệp của em',
       },
       hero: {
         lead: 'Em',
-        description: `Thanh xuân tại UIT sắp khép lại, mở ra một hành trình mới. Mong được đón ${midCall} đến chung vui và lưu giữ khoảnh khắc đáng nhớ này cùng em.`,
+        description: `Bốn năm học tập tại UIT sắp khép lại, mở ra một chặng đường mới. Em rất mong được đón tiếp ${midCall} đến chung vui và chụp ảnh kỷ niệm cùng em.`,
       },
       countdownPillPrefix: 'Trân trọng kính mời',
       about: buildAboutCopy(midCall, 'em'),
       newsletter: {
-        subtitle: `Hãy viết đôi dòng lên tờ giấy note gửi em Mai — sự hiện diện hay lời chúc của ${midCall} đều là kỷ niệm Mai sẽ trân trọng giữ mãi.`,
+        subtitle: `Em rất mong nhận được đôi dòng lời chúc từ ${midCall} trên bảng lưu bút kỷ niệm chiều 27/11.`,
         attendanceLabel: `${hasExplicitName ? callName : 'Chị'} có tham dự buổi lễ cùng em không?`,
         attendingChoice: 'Chị sẽ tham dự',
         remoteChoice: 'Chị gửi chúc từ xa',
-        defaultAuthor: 'Chị thân mến',
+        defaultAuthor: 'Chị',
         noteTag: '',
-        placeholderMessage: 'Viết lời chúc gửi em Mai lên tờ note tại đây...',
-        errorMessage: 'Hãy viết đôi dòng lên tờ giấy note gửi đến em Mai trước khi dán nha!',
-        successMessage: `Tờ note mới đã được dán lên bảng kỷ niệm! Em Mai cảm ơn tình cảm của ${midCall} nhiều ạ.`,
+        placeholderMessage: 'Viết lời chúc gửi em Mai tại đây...',
+        errorMessage: 'Vui lòng viết lời chúc trước khi dán lên bảng lưu bút.',
+        successMessage: `Tờ note đã được dán lên bảng lưu bút. Em Mai xin cảm ơn ${midCall} ạ.`,
       },
       footer: {
-        message: `Bốn năm đại học là hành trình của tri thức, của những nỗ lực không ngừng và của biết bao yêu thương nâng đỡ. Em xin gửi lời cảm ơn chân thành nhất đến gia đình, thầy cô, bạn bè và đặc biệt cảm ơn ${midCall} đã dành thời gian đến chung vui, để ngày tốt nghiệp của em trở nên trọn vẹn và đáng nhớ hơn bao giờ hết.`,
+        message: DEFAULT_FOOTER_MESSAGE,
       },
-      inviteSms: `Em chào ${midCall}, sắp tới chiều thứ Sáu 27/11 (15:00 – 17:00) là lễ tốt nghiệp của em tại trường UIT ạ. Em trân trọng gửi ${midLower} tấm thiệp mời online này, rất mong được đón ${midLower} đến chung vui và chụp cùng em tấm ảnh kỷ niệm nhé!`,
+      inviteSms: `Em chào ${midCall}, chiều Thứ Sáu 27/11 (15:00 – 17:00) là lễ tốt nghiệp của em tại Trường ĐH Công nghệ Thông tin (UIT). Em trân trọng gửi ${midLower} thiệp mời này, rất mong được đón tiếp ${midLower} đến chung vui và chụp ảnh kỷ niệm cùng em ạ.`,
     }
   }
 
@@ -559,29 +560,29 @@ function buildBaseCopy({
       customNote,
       cover: {
         prefix: 'Trân trọng kính mời',
-        suffix: 'đến chung vui cùng chị trong ngày trọng đại này',
+        suffix: 'đến chung vui trong buổi lễ tốt nghiệp của chị',
       },
       hero: {
         lead: 'Chị',
-        description: `Thanh xuân tại UIT sắp khép lại, mở ra một hành trình mới. Mong được cùng ${midCall} lưu giữ khoảnh khắc thật đáng nhớ này nhé.`,
+        description: `Bốn năm học tập tại UIT của chị sắp khép lại, mở ra một chặng đường mới. Rất mong được đón ${midCall} đến chung vui và chụp ảnh kỷ niệm cùng chị.`,
       },
       countdownPillPrefix: 'Trân trọng kính mời',
       about: buildAboutCopy(midCall, 'chị'),
       newsletter: {
-        subtitle: `Viết đôi dòng lên một tờ giấy note gửi chị Mai nhé — từng lời chúc hay cái hẹn chiều 27/11 của ${midCall} chị đều trân quý giữ mãi.`,
+        subtitle: `${hasExplicitName ? callName : 'Em'} hãy để lại đôi dòng lời chúc hoặc hẹn giờ gặp chiều 27/11 trên bảng lưu bút cùng chị Mai nhé.`,
         attendanceLabel: `${hasExplicitName ? callName : 'Em'} có tham dự buổi lễ cùng chị không?`,
         attendingChoice: 'Em sẽ tham dự',
         remoteChoice: 'Em gửi chúc từ xa',
-        defaultAuthor: 'Em thân mến',
+        defaultAuthor: 'Em',
         noteTag: '',
-        placeholderMessage: 'Viết lời chúc gửi chị Mai lên tờ note tại đây...',
-        errorMessage: 'Hãy viết đôi dòng lên tờ giấy note gửi đến chị Mai trước khi dán nha!',
-        successMessage: `Tờ note mới đã được dán lên bảng kỷ niệm! Chị Mai cảm ơn ${midCall} nhiều nha.`,
+        placeholderMessage: 'Viết lời chúc gửi chị Mai tại đây...',
+        errorMessage: 'Vui lòng viết lời chúc trước khi dán lên bảng lưu bút.',
+        successMessage: `Tờ note đã được dán lên bảng lưu bút. Chị Mai cảm ơn ${midCall} nhiều nhé.`,
       },
       footer: {
-        message: `Bốn năm đại học là hành trình của tri thức, của những nỗ lực không ngừng và của biết bao yêu thương nâng đỡ. Chị xin gửi lời cảm ơn chân thành nhất đến gia đình, thầy cô, bạn bè và cảm ơn ${midCall} đã dành thời gian đến chung vui, để ngày tốt nghiệp của chị trở nên trọn vẹn và đáng nhớ hơn bao giờ hết.`,
+        message: DEFAULT_FOOTER_MESSAGE,
       },
-      inviteSms: `${hasExplicitName ? callName : 'Em'} ơi, chiều thứ Sáu 27/11 (15:00 – 17:00) chị làm lễ tốt nghiệp tại UIT nè. Chị gửi tấm thiệp nhỏ này mời ${midCall} qua trường chung vui và chụp ảnh kỷ niệm với chị nha!`,
+      inviteSms: `Chào ${midCall}, chiều Thứ Sáu 27/11 (15:00 – 17:00) là lễ tốt nghiệp của chị tại Trường ĐH Công nghệ Thông tin (UIT). Chị gửi thiệp mời này, rất mong ${midCall} sắp xếp thời gian đến chung vui và chụp ảnh kỷ niệm với chị nhé.`,
     }
   }
 
@@ -596,16 +597,20 @@ function buildBaseCopy({
       customNote,
       cover: {
         prefix: 'Trân trọng kính mời',
-        suffix: 'đến chung vui trong ngày lễ tốt nghiệp của em',
+        suffix: 'đến dự buổi lễ tốt nghiệp của em',
       },
       hero: {
         lead: 'Em',
-        description: `Bốn năm dưới mái trường UIT sắp khép lại, mở ra một hành trình mới. Em rất mong được đón ${midCall} đến chung vui và lưu giữ cùng em khoảnh khắc đáng nhớ này.`,
+        description: `Bốn năm học tập tại UIT sắp khép lại, mở ra một chặng đường mới. Em rất hân hạnh được đón tiếp ${midCall} đến chung vui và chụp ảnh kỷ niệm cùng em.`,
       },
       countdownPillPrefix: 'Kính mời',
-      about: buildAboutCopy(midCall, 'em'),
+      about: buildAboutCopy(
+        midCall,
+        'em',
+        `Sự hiện diện của ${midCall} là niềm vinh hạnh đối với em. Em xin cảm ơn ${titleWord} đã tận tình dạy bảo em trong suốt thời gian qua.`
+      ),
       newsletter: {
-        subtitle: `Kính mong ${midCall} để lại đôi dòng lưu bút lên bảng kỷ niệm — từng lời nhắn gửi của ${titleWord} là hành trang quý báu em Mai sẽ mang theo mãi.`,
+        subtitle: `Em kính mời ${midCall} để lại đôi dòng lời nhắn trên bảng lưu bút kỷ niệm ngày tốt nghiệp.`,
         attendanceLabel: `Kính hỏi ${midCall} có tham dự buổi lễ không ạ?`,
         attendingChoice: `${titleWord} sẽ tham dự`,
         remoteChoice: 'Gửi lời chúc từ xa',
@@ -613,12 +618,12 @@ function buildBaseCopy({
         noteTag: 'Giảng viên UIT',
         placeholderMessage: 'Viết đôi dòng nhắn gửi đến em Mai tại đây...',
         errorMessage: `Kính mời ${midCall} viết đôi dòng lưu bút trước khi dán lên bảng ạ.`,
-        successMessage: `Tờ note mới đã được dán lên bảng kỷ niệm! Em Mai xin chân thành cảm ơn ${midCall} ạ.`,
+        successMessage: `Tờ note đã được dán lên bảng lưu bút. Em Mai xin chân thành cảm ơn ${midCall} ạ.`,
       },
       footer: {
-        message: `Bốn năm đại học là hành trình của tri thức, của những nỗ lực không ngừng và của biết bao yêu thương nâng đỡ. Em xin gửi lời tri ân sâu sắc nhất đến ${midCall} — người đã tận tâm dìu dắt em trong những năm tháng thanh xuân tại UIT, và rất hân hạnh nếu được đón ${titleWord} đến chung vui trong ngày lễ tốt nghiệp của em.`,
+        message: DEFAULT_FOOTER_MESSAGE,
       },
-      inviteSms: `Em chào ${midCall}, em là Xuân Mai (khóa K17 - UIT). Sắp tới chiều thứ Sáu 27/11 (15:00 – 17:00) là lễ tốt nghiệp của em tại trường ạ. Em trân trọng kính gửi ${titleWord} tấm thiệp mời online này, rất mong nếu thuận tiện được đón ${titleWord} đến chung vui và chụp cùng em một tấm ảnh kỷ niệm ạ!`,
+      inviteSms: `Em chào ${midCall}, em là Nguyễn Vũ Xuân Mai (khóa K17 - UIT). Chiều Thứ Sáu 27/11 (15:00 – 17:00) là lễ tốt nghiệp của em tại trường. Em trân trọng kính gửi ${titleWord} thiệp mời này, rất hân hạnh nếu được đón tiếp ${titleWord} đến chung vui và chụp ảnh kỷ niệm cùng em ạ.`,
     }
   }
 
@@ -632,29 +637,33 @@ function buildBaseCopy({
       customNote,
       cover: {
         prefix: 'Kính mời',
-        suffix: 'đến chung vui trong ngày trọng đại của con',
+        suffix: 'đến dự buổi lễ tốt nghiệp của con',
       },
       hero: {
         lead: 'Con',
-        description: `Bốn năm đại học tại UIT sắp khép lại, mở ra một chặng đường mới. Khoảnh khắc tốt nghiệp này sẽ chẳng thể trọn vẹn nếu thiếu ${midCall} ở bên.`,
+        description: `Bốn năm học tập tại UIT sắp khép lại, mở ra một chặng đường mới. Con rất mong được đón ${midCall} đến dự buổi lễ và chụp ảnh kỷ niệm cùng con.`,
       },
       countdownPillPrefix: 'Con kính mời',
-      about: buildAboutCopy(midCall, 'con'),
+      about: buildAboutCopy(
+        midCall,
+        'con',
+        `Con rất mong ${midCall} đến dự buổi lễ cùng con. Cảm ơn ${midCall} đã luôn đồng hành và ủng hộ con trong suốt thời gian qua.`
+      ),
       newsletter: {
-        subtitle: `Nếu muốn nhắn nhủ đôi lời cho con gái trước chặng đường mới, ${midCall} cứ viết lên tờ giấy note nhỏ này nhé — con sẽ đọc và giữ mãi.`,
+        subtitle: `Nếu muốn nhắn nhủ đôi lời cho con trước chặng đường mới, ${midCall} có thể viết lên tờ note này để lưu làm kỷ niệm.`,
         attendanceLabel: `${midCall} có tham dự buổi lễ cùng con không?`,
         attendingChoice: 'Cả nhà sẽ tham dự',
         remoteChoice: 'Gửi lời chúc từ xa',
         defaultAuthor: 'Bố Mẹ',
         noteTag: 'Gia đình',
-        placeholderMessage: 'Viết lời nhắn thương yêu gửi con gái tại đây...',
-        errorMessage: 'Viết vài chữ gửi con gái trước khi dán lên bảng nhé!',
-        successMessage: `Con đã nhận được note yêu thương từ ${midCall} rồi ạ! Thương ${midCall} nhiều thật nhiều.`,
+        placeholderMessage: 'Viết lời nhắn gửi con tại đây...',
+        errorMessage: 'Vui lòng viết lời nhắn trước khi dán lên bảng lưu bút.',
+        successMessage: `Con đã nhận được lời nhắn từ ${midCall} trên bảng lưu bút. Con cảm ơn ${midCall} ạ.`,
       },
       footer: {
-        message: `Bốn năm đại học là hành trình của tri thức, của những nỗ lực không ngừng và của biết bao yêu thương nâng đỡ. Con xin gửi lời cảm ơn sâu sắc nhất đến ${midCall} — những người luôn ở phía sau lặng lẽ hy sinh để con yên tâm bước tiếp, và mong ngày tốt nghiệp hôm nay sẽ là kỷ niệm thật tự hào của cả nhà mình.`,
+        message: DEFAULT_FOOTER_MESSAGE,
       },
-      inviteSms: `${midCall} ơi, vậy là chiều thứ Sáu 27/11 (15:00 – 17:00) tới đây con chính thức làm lễ tốt nghiệp ở UIT rồi! Con gửi ${midCall} tấm thiệp mời online nhỏ xinh này, cả nhà mình cùng lên trường chụp ảnh kỷ niệm với con nhé!`,
+      inviteSms: `${midCall} ơi, chiều Thứ Sáu 27/11 (15:00 – 17:00) tới đây là lễ tốt nghiệp của con tại Trường ĐH Công nghệ Thông tin (UIT). Con gửi ${midCall} thiệp mời này, rất mong cả nhà cùng lên trường dự lễ và chụp ảnh kỷ niệm với con ạ.`,
     }
   }
 
@@ -668,34 +677,38 @@ function buildBaseCopy({
       customNote,
       cover: {
         prefix: 'Trân trọng kính mời',
-        suffix: 'đến chung vui trong ngày trọng đại của cháu',
+        suffix: 'đến chung vui trong buổi lễ tốt nghiệp của cháu',
       },
       hero: {
         lead: 'Cháu',
-        description: `Bốn năm đại học tại UIT sắp khép lại, mở ra một hành trình mới. Cháu rất mong được đón ${midCall} đến chung vui và chụp ảnh kỷ niệm cùng cháu.`,
+        description: `Bốn năm học tập tại UIT sắp khép lại, mở ra một chặng đường mới. Cháu rất mong được đón tiếp ${midCall} đến chung vui và chụp ảnh kỷ niệm cùng cháu.`,
       },
       countdownPillPrefix: 'Cháu kính mời',
-      about: buildAboutCopy(midCall, 'cháu'),
+      about: buildAboutCopy(
+        midCall,
+        'cháu',
+        `Sự hiện diện hoặc lời chúc của ${midCall} là niềm vui và niềm vinh hạnh đối với cháu. Cháu cảm ơn ${midCall} đã luôn quan tâm và đồng hành cùng cháu.`
+      ),
       newsletter: {
-        subtitle: `Kính mời ${midCall} viết đôi dòng lên tờ giấy note và dán lên bảng kỷ niệm — từng lời chúc của người thân đều là niềm hạnh phúc lớn cháu sẽ giữ mãi.`,
+        subtitle: `Cháu kính mời ${midCall} viết đôi dòng lời chúc lên bảng lưu bút kỷ niệm ngày tốt nghiệp của cháu.`,
         attendanceLabel: `${hasExplicitName ? callName : 'Gia đình'} có tham dự buổi lễ cùng cháu không?`,
         attendingChoice: 'Cả nhà sẽ tham dự',
         remoteChoice: 'Gửi lời chúc từ xa',
         defaultAuthor: 'Người thân',
         noteTag: 'Gia đình',
         placeholderMessage: 'Viết lời chúc mừng gửi cháu Mai tại đây...',
-        errorMessage: 'Hãy viết đôi dòng lên tờ giấy note gửi cháu Mai trước khi dán nha!',
-        successMessage: `Tờ note mới đã được dán lên bảng kỷ niệm! Cháu Mai cảm ơn tình cảm của ${midCall} nhiều ạ.`,
+        errorMessage: 'Vui lòng viết lời chúc trước khi dán lên bảng lưu bút.',
+        successMessage: `Tờ note đã được dán lên bảng lưu bút. Cháu Mai xin cảm ơn ${midCall} ạ.`,
       },
       footer: {
-        message: `Bốn năm đại học là hành trình của tri thức, của những nỗ lực không ngừng và của biết bao yêu thương nâng đỡ. Cháu xin gửi lời cảm ơn chân thành nhất đến ${midCall} và cả gia đình đã luôn yêu thương, ủng hộ, để ngày tốt nghiệp của cháu trở nên trọn vẹn và đáng nhớ hơn bao giờ hết.`,
+        message: DEFAULT_FOOTER_MESSAGE,
       },
-      inviteSms: `Cháu chào ${midCall}, chiều thứ Sáu 27/11 (15:00 – 17:00) tới đây là lễ tốt nghiệp đại học của cháu tại UIT ạ. Cháu trân trọng gửi ${midCall} tấm thiệp mời online này, rất vui nếu được đón mọi người qua trường chung vui và chụp ảnh kỷ niệm cùng cháu ạ!`,
+      inviteSms: `Cháu chào ${midCall}, chiều Thứ Sáu 27/11 (15:00 – 17:00) tới đây là lễ tốt nghiệp đại học của cháu tại Trường ĐH Công nghệ Thông tin (UIT). Cháu trân trọng gửi ${midCall} thiệp mời này, rất mong được đón tiếp ${midCall} đến chung vui và chụp ảnh kỷ niệm cùng cháu ạ.`,
     }
   }
 
   if (presetId === 'ban_than') {
-    const midCall = hasExplicitName ? callName : 'bạn hiền'
+    const midCall = hasExplicitName ? callName : 'bạn'
     return {
       preset: presetMeta,
       isPersonalized,
@@ -704,29 +717,33 @@ function buildBaseCopy({
       customNote,
       cover: {
         prefix: 'Thân mời',
-        suffix: 'đến chung vui cùng Mai trong ngày trọng đại này nha',
+        suffix: 'đến chung vui trong buổi lễ tốt nghiệp của Mai',
       },
       hero: {
         lead: 'Mình',
-        description: `Sau bốn năm cày deadline ở UIT cuối cùng tụi mình cũng sắp tốt nghiệp rồi! Hẹn ${midCall} qua chụp thật nhiều ảnh kỷ niệm với Mai nhé.`,
+        description: `Bốn năm học tập tại UIT sắp khép lại, mở ra một chặng đường mới. Hẹn ${midCall} chiều 27/11 đến chung vui và chụp ảnh kỷ niệm cùng Mai nhé.`,
       },
       countdownPillPrefix: 'Hẹn gặp',
-      about: buildAboutCopy(midCall, 'Mai'),
+      about: buildAboutCopy(
+        midCall,
+        'Mai',
+        `Rất mong được gặp ${midCall} tại buổi lễ tốt nghiệp chiều 27/11. Cảm ơn ${midCall} đã luôn đồng hành cùng Mai trong suốt thời gian qua.`
+      ),
       newsletter: {
-        subtitle: `Viết vài dòng tâm tình hoặc chốt kèo giờ qua UIT lên tờ giấy note nha ${midCall} — mai mốt xem lại chắc chắn sẽ cười rạng rỡ lắm đây!`,
-        attendanceLabel: `${hasExplicitName ? callName : 'Bạn'} có tham dự buổi lễ cùng Mai chứ?`,
-        attendingChoice: 'Chắc chắn tham dự!',
+        subtitle: `Để lại vài dòng lời chúc hoặc hẹn giờ gặp tại UIT chiều 27/11 trên bảng lưu bút nhé ${midCall}.`,
+        attendanceLabel: `${hasExplicitName ? callName : 'Bạn'} có tham dự buổi lễ cùng Mai không?`,
+        attendingChoice: 'Sẽ tham dự',
         remoteChoice: 'Gửi lời chúc từ xa',
         defaultAuthor: 'Bạn thân',
         noteTag: 'Bạn thân',
-        placeholderMessage: 'Viết lời chúc hoặc lời hẹn lên tờ note cho Mai nha...',
-        errorMessage: 'Viết vài dòng cho Mai trước khi bấm dán note nha!',
-        successMessage: `Đã dán note lên tường rồi đó! Cảm ơn ${midCall} siêu nhiều luôn!`,
+        placeholderMessage: 'Viết lời chúc hoặc lời hẹn cho Mai tại đây...',
+        errorMessage: 'Vui lòng viết vài dòng lời chúc trước khi dán lên bảng nhé.',
+        successMessage: `Tờ note đã được dán lên bảng lưu bút. Cảm ơn ${midCall} nhiều nhé!`,
       },
       footer: {
-        message: `Bốn năm đại học là hành trình của tri thức, của những nỗ lực không ngừng và của biết bao yêu thương nâng đỡ. Mai cảm ơn gia đình, thầy cô và đặc biệt cảm ơn ${midCall} đã luôn ở bên từ giảng đường tới ngày ra trường, để thanh xuân này trở nên rực rỡ và đáng nhớ hơn bao giờ hết.`,
+        message: DEFAULT_FOOTER_MESSAGE,
       },
-      inviteSms: `${midCall} ơi, chiều thứ Sáu 27/11 (15:00 – 17:00) Mai tốt nghiệp ở UIT nè! Gửi ${midCall} tấm thiệp xinh này chốt lịch trước, bữa đó nhớ qua trường chụp ảnh chung vui với Mai nha!`,
+      inviteSms: `Chào ${midCall}, chiều Thứ Sáu 27/11 (15:00 – 17:00) là lễ tốt nghiệp của Mai tại UIT. Mai gửi ${midCall} thiệp mời này, hẹn ${midCall} qua trường chung vui và chụp ảnh kỷ niệm cùng Mai nhé.`,
     }
   }
 
@@ -740,29 +757,33 @@ function buildBaseCopy({
       customNote,
       cover: {
         prefix: 'Trân trọng kính mời',
-        suffix: 'đến chung vui cùng Mai trong ngày trọng đại này',
+        suffix: 'đến chung vui trong buổi lễ tốt nghiệp của Mai',
       },
       hero: {
         lead: 'Mình',
-        description: `Thanh xuân tại UIT sắp khép lại, mở ra một hành trình mới. Mong được cùng ${midCall} lưu giữ khoảnh khắc đáng nhớ này.`,
+        description: `Bốn năm học tập tại UIT sắp khép lại, mở ra một chặng đường mới. Rất mong được đón ${midCall} đến chung vui và chụp ảnh kỷ niệm cùng Mai.`,
       },
       countdownPillPrefix: 'Trân trọng kính mời',
-      about: buildAboutCopy(midCall, 'Mai'),
+      about: buildAboutCopy(
+        midCall,
+        'Mai',
+        `Sự hiện diện hoặc lời chúc từ phương xa của ${midCall} là niềm vui đối với Mai. Cảm ơn ${midCall} đã luôn đồng hành cùng Mai trong thời gian qua.`
+      ),
       newsletter: {
-        subtitle: `Hãy viết đôi dòng lên một tờ giấy note và dán lên bảng kỷ niệm — từng lời chúc hay cái hẹn chiều 27/11 của ${midCall} đều là mảnh ghép Mai sẽ giữ mãi.`,
+        subtitle: `Hãy để lại đôi dòng lời chúc hoặc lời hẹn chiều 27/11 trên bảng lưu bút kỷ niệm cùng Mai nhé.`,
         attendanceLabel: `${hasExplicitName ? callName : 'Bạn'} có tham dự buổi lễ cùng Mai không?`,
         attendingChoice: 'Mình sẽ tham dự',
         remoteChoice: 'Mình gửi chúc từ xa',
         defaultAuthor: 'Bạn của Mai',
         noteTag: '',
         placeholderMessage: 'Viết lời chúc hoặc kỷ niệm lên tờ note tại đây...',
-        errorMessage: 'Hãy viết đôi dòng lên tờ giấy note gửi đến Mai trước khi dán nha!',
-        successMessage: `Tờ note mới đã được dán lên bảng kỷ niệm! Cảm ơn tình cảm của ${midCall}.`,
+        errorMessage: 'Vui lòng viết lời chúc trước khi dán lên bảng lưu bút.',
+        successMessage: `Tờ note đã được dán lên bảng lưu bút. Cảm ơn lời chúc của ${midCall}.`,
       },
       footer: {
-        message: `Bốn năm đại học là hành trình của tri thức, của những nỗ lực không ngừng và của biết bao yêu thương nâng đỡ. Xuân Mai xin gửi lời cảm ơn chân thành nhất đến gia đình, thầy cô, bạn bè — và cảm ơn ${midCall} đã dành thời gian đến chung vui, để ngày tốt nghiệp này trở nên trọn vẹn và đáng nhớ hơn bao giờ hết.`,
+        message: DEFAULT_FOOTER_MESSAGE,
       },
-      inviteSms: `${hasExplicitName ? `Chào ${callName}` : 'Chào bạn'}, chiều thứ Sáu 27/11 (15:00 – 17:00) tới đây là lễ tốt nghiệp của Mai tại trường UIT. Mai gửi ${midCall} tấm thiệp mời online này, rất mong được đón ${midCall} đến chung vui và chụp ảnh kỷ niệm cùng Mai nhé!`,
+      inviteSms: `${hasExplicitName ? `Chào ${callName}` : 'Chào bạn'}, chiều Thứ Sáu 27/11 (15:00 – 17:00) tới đây là lễ tốt nghiệp của Mai tại Trường ĐH Công nghệ Thông tin (UIT). Mai trân trọng gửi ${midCall} thiệp mời này, rất mong được đón ${midCall} đến chung vui và chụp ảnh kỷ niệm cùng Mai nhé.`,
     }
   }
 
@@ -775,7 +796,7 @@ function buildBaseCopy({
     customNote,
     cover: {
       prefix: 'Trân trọng kính mời',
-      suffix: 'đến chung vui trong ngày trọng đại này',
+      suffix: 'đến chung vui trong buổi lễ tốt nghiệp',
     },
     hero: {
       lead: 'Mình',
@@ -786,7 +807,7 @@ function buildBaseCopy({
     about: buildAboutCopy(hasExplicitName ? callName : 'bạn', 'Mai'),
     newsletter: {
       subtitle:
-        'Hãy viết đôi dòng lên một tờ giấy note và dán lên bảng kỷ niệm — từng lời chúc hay cái hẹn chiều 27/11 đều là mảnh ghép thanh xuân Mai sẽ giữ mãi.',
+        'Hãy để lại đôi dòng lời chúc hoặc xác nhận tham dự chiều 27/11 trên bảng lưu bút kỷ niệm.',
       placeholderName: 'Ví dụ: Cha Eun Woo',
       roleLabel: 'Bạn đến với Mai là',
       attendanceLabel: 'Bạn có tham dự buổi lễ không?',
@@ -795,15 +816,14 @@ function buildBaseCopy({
       defaultAuthor: 'Khách mời',
       noteTag: '',
       placeholderMessage: 'Viết lời chúc hoặc kỷ niệm lên tờ note tại đây...',
-      errorName: 'Đừng quên ghi tên để Mai biết lời chúc từ bạn nhé!',
-      errorMessage: 'Hãy viết đôi dòng lên tờ giấy note gửi đến Mai trước khi dán nha!',
-      successMessage: 'Tờ note mới đã được dán lên bảng kỷ niệm! Cảm ơn tình cảm của bạn.',
+      errorName: 'Vui lòng nhập họ và tên trước khi gửi lời chúc.',
+      errorMessage: 'Vui lòng viết lời chúc trước khi dán lên bảng lưu bút.',
+      successMessage: 'Tờ note đã được dán lên bảng lưu bút. Cảm ơn lời chúc của bạn.',
     },
     footer: {
-      message:
-        'Bốn năm đại học là hành trình của tri thức, của những nỗ lực không ngừng và của biết bao yêu thương nâng đỡ. Xuân Mai xin gửi lời cảm ơn chân thành nhất đến gia đình, thầy cô và bạn bè — những người đã luôn ở bên, và xin cảm ơn mọi người đã dành thời gian đến chung vui, để ngày tốt nghiệp này trở nên trọn vẹn và đáng nhớ hơn bao giờ hết.',
+      message: DEFAULT_FOOTER_MESSAGE,
     },
     inviteSms:
-      'Chào mọi người, chiều thứ Sáu 27/11 (15:00 – 17:00) là lễ tốt nghiệp của Xuân Mai tại UIT. Mai gửi tấm thiệp mời online này, rất mong được đón mọi người đến chung vui và chụp ảnh kỷ niệm cùng Mai nhé!',
+      'Chào mọi người, chiều Thứ Sáu 27/11 (15:00 – 17:00) là lễ tốt nghiệp của Nguyễn Vũ Xuân Mai tại Trường ĐH Công nghệ Thông tin (UIT). Mai trân trọng gửi mọi người thiệp mời này, rất mong được đón tiếp mọi người đến chung vui và chụp ảnh kỷ niệm.',
   }
 }

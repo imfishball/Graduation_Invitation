@@ -35,14 +35,14 @@ export const HERO = {
     secondaryShort: 'Xem lịch lễ',
   },
   stats: [
-    { value: '4 Năm', label: 'Thanh xuân trọn vẹn' },
+    { value: '4 Năm', label: 'Học tập tại UIT' },
     { value: '1 Hành trình', label: 'Nỗ lực & trưởng thành' },
-    { value: 'Vô vàn', label: 'Yêu thương & Biết ơn' },
+    { value: '1 Cột mốc', label: 'Trân trọng & biết ơn' },
   ],
   feature: {
     eyebrow: 'Khoảnh khắc trọng đại',
     location: 'UIT ĐHQG-HCM • 15:00 – 17:00',
-    title: 'Lễ tốt nghiệp của mình <3333',
+    title: 'Lễ tốt nghiệp của Xuân Mai',
   },
 }
 
@@ -83,7 +83,7 @@ export const POSTS = [
     slug: 'toa-b-mua-nang-xanh',
     location: 'Khuôn Viên Tòa B • UIT',
     title: 'Tòa B Mùa Rợp Bóng Xanh',
-    excerpt: 'Ánh nắng xuyên qua vòm lá xanh biếc trước Tòa B, chứng kiến biết bao mùa thi trưởng thành.',
+    excerpt: 'Khuôn viên trước Tòa B rợp bóng cây xanh, nơi gắn liền với những học kỳ và mùa thi tại UIT.',
     image: '/assets/post-iceland.jpg',
     alt: 'Tòa nhà B Trường Đại học Công nghệ Thông tin ẩn hiện dưới tán cây xanh mát',
   },
@@ -91,7 +91,7 @@ export const POSTS = [
     slug: 'mai-truong-uit-than-thuong',
     location: 'Tòa Nhà Chính • UIT',
     title: 'Ngước Nhìn Mái Trường UIT',
-    excerpt: 'Tòa nhà kính và hàng cờ bay trong nắng nhẹ, gói trọn bốn năm thanh xuân rực rỡ.',
+    excerpt: 'Tòa nhà kính và hàng cờ trước sân trường — hình ảnh quen thuộc trong suốt bốn năm học tại UIT.',
     image: '/assets/post-uit-building.jpg?v=2',
     alt: 'Biểu tượng UIT — Welcome to University of Information Technology trước tòa nhà kính và hàng cờ tung bay trong nắng nhẹ',
   },
@@ -148,7 +148,7 @@ export const INSTAGRAM = {
       alt: 'Nhóm bạn UIT K17 chụp ảnh kỷ niệm qua ô kính giảng đường phía trước bức tranh máy bay',
     },
     {
-      location: 'Thanh xuân có bạn đồng hành',
+      location: 'Kỷ niệm cùng bạn bè khóa K17',
       image: '/assets/ig-friends-group.jpg',
       width: 1500,
       height: 1000,
@@ -162,7 +162,7 @@ export const INSTAGRAM = {
       alt: 'Xuân Mai trong tà áo trắng cùng nhóm bạn UIT K17 giang rộng vòng tay rạng rỡ trước cổng trường',
     },
     {
-      location: 'Bầu trời UIT những ngày mơ ước',
+      location: 'Bầu trời chiều trên khuôn viên UIT',
       image: '/assets/ig-uit-airplane.jpg',
       width: 1200,
       height: 1200,
@@ -172,7 +172,7 @@ export const INSTAGRAM = {
 }
 
 export const NEWSLETTER = {
-  script: 'gửi gắm tâm tình',
+  script: 'lưu bút kỷ niệm',
   title: 'Bảng Lưu Bút & Lời Chúc',
   cta: 'Dán Note Lên Bảng',
   placeholderName: 'Ví dụ: Cha Eun Woo',
@@ -196,7 +196,7 @@ export const INITIAL_GUESTBOOK = [
     fastener: 'tape-stripe',
     doodle: 'star',
     message:
-      'Bố Mẹ rất tự hào về con gái! Chúc con vững bước chặng đường mới, cả nhà luôn bên con.',
+      'Bố Mẹ mừng cho con gái. Chúc con vững bước trên chặng đường mới, cả nhà luôn ủng hộ con.',
     time: 'Hôm qua lúc 18:30',
   },
   {
@@ -232,7 +232,7 @@ export const INITIAL_GUESTBOOK = [
     fastener: 'tape-grid',
     doodle: 'sparkle',
     message:
-      'Chúc Mai tốt nghiệp thật rực rỡ và nhiều niềm vui! Hẹn gặp bạn chiều 27/11 ở sân trường UIT nhé.',
+      'Chúc mừng Mai tốt nghiệp! Chúc bạn nhiều sức khỏe và thành công, hẹn gặp chiều 27/11 ở sân trường UIT nhé.',
     time: 'Hôm nay lúc 10:15',
   },
 ]

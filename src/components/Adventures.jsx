@@ -177,12 +177,12 @@ export default function Adventures() {
       <div className="container">
         <SectionHead
           tagline="nhìn lại"
-          title="Dấu Ấn Thanh Xuân"
+          title="Hành Trình Tại UIT"
           id="adventures-title"
           className="reveal"
         />
 
-        <div className="scrapbook-grid" role="list" aria-label="Sổ lưu niệm Polaroid 6 dấu ấn thanh xuân">
+        <div className="scrapbook-grid" role="list" aria-label="Sổ lưu niệm Polaroid 6 kỷ niệm tại UIT">
           {POSTS.map((post, index) => {
             const slot = SCRAPBOOK_SLOTS[index % SCRAPBOOK_SLOTS.length]
             return (

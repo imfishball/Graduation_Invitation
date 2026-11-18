@@ -100,7 +100,7 @@ export default function Hero({ entered = true }) {
               <>
                 <span className="text-desktop">{copy.hero.description}</span>
                 <span className="text-mobile">
-                  Thanh xuân UIT sắp khép lại. Mong được cùng mọi người lưu giữ khoảnh khắc này.
+                  Bốn năm học tập tại UIT sắp khép lại. Rất mong được đón tiếp mọi người đến chung vui trong ngày lễ tốt nghiệp.
                 </span>
               </>
             )}
@@ -132,7 +132,7 @@ export default function Hero({ entered = true }) {
                   <p className="stat__label">
                     <span className="text-desktop">{stat.label}</span>
                     <span className="text-mobile">
-                      {index === 0 ? 'Thanh xuân' : index === 1 ? 'Trưởng thành' : 'Biết ơn'}
+                      {index === 0 ? 'Tại UIT' : index === 1 ? 'Trưởng thành' : 'Biết ơn'}
                     </span>
                   </p>
                 </li>

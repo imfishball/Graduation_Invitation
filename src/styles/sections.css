@@ -618,7 +618,7 @@ body.is-locked .mobile-bottom-bar {
 }
 
 .hero__desc {
-  max-width: 490px;
+  max-width: 560px;
   font-family: var(--font-body);
   font-size: 16.5px;
   line-height: 26px;

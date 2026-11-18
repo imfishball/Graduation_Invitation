@@ -757,7 +757,7 @@ export default function Newsletter() {
                       <span className="bujo-title__star" aria-hidden="true">
                         <OutlineStarIcon size={16} />
                       </span>
-                      <span>Những lời chúc yêu thương</span>
+                      <span>Những lời chúc mừng</span>
                     </h3>
                     <span className="bujo-title__wave" aria-hidden="true">
                       <WavyLineSvg />
