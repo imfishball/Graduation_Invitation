@@ -74,7 +74,7 @@ export default function MonthCalendar() {
 
       <div className="mini-calendar__caption">
         <HeartIcon size={13} />
-        <span>Thứ Sáu, 27.11.2026 — Lễ Tốt Nghiệp UIT</span>
+        <span>Lễ Tốt Nghiệp UIT</span>
       </div>
     </div>
   )
